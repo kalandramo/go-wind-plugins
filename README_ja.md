@@ -30,9 +30,8 @@
 ---
 
 ## 主な特徴
-
-- **統一インターフェース**：4つのドメイン（Config / Registry / Log / Transport）いずれもコアフレームワークが標準インターフェースを定義
-- **マルチエンジンサポート**：6種類のコンフィグセンター、8種類のレジストリ、6種類のログバックエンド、3種類のHTTPドライバ
+- **統一インターフェース**：6つのドメイン（Config / Registry / Log / Metrics / Transport / Tracer）いずれもコアフレームワークが標準インターフェースを定義
+- **マルチエンジンサポート**：6種類のコンフィグセンター、8種類のレジストリ、6種類のログバックエンド、3種類のメトリクスバックエンド、3種類のHTTPドライバ、1種類のOTLPトレースプロトコル
 - **ゼロ侵入**：ビジネスコードはインターフェースのみに依存し、特定エンジンのSDKには依存しない
 - **独立バージョン管理**：各サブモジュールが独自の `go.mod` を持ち、必要なものだけを導入可能
 - **Workspace連携**：`go.work` によるマルチモジュール管理で、単一リポジトリのような開発体験
@@ -74,6 +73,37 @@
 | `Server` (HTTP) | `Handle / GET / POST / PUT / DELETE...` | ルーティング登録 |
 | `Server` (HTTP) | `Start(ctx)` / `Stop(ctx)` / `Endpoint()` | ライフサイクル管理 |
 | `Driver` (HTTP) | `Handle / Start / Stop` | フレームワークアダプタドライバ |
+
+### 分散トレーシング（Tracer）
+
+| インターフェース | メソッド | 説明 |
+|-----------------|---------|------|
+| `*sdktrace.TracerProvider` | `Tracer(name) trace.Tracer` | 標準 OTel Tracer を作成 |
+| `*sdktrace.TracerProvider` | `Shutdown(ctx)` | プロバイダーをシャットダウンし、保留中の Span をフラッシュ |
+| `trace.Tracer` | `Start(ctx, name, opts...)` | Span を作成し、トレースコンテキストを注入 |
+
+> OpenTelemetry 標準に基づき、カスタムインターフェースは定義せず、ネイティブ OTel 型を直接使用します。
+
+### メトリクス（Metrics）
+
+| インターフェース | メソッド | 説明 |
+|-----------------|---------|------|
+| `Metrics` | `Counter(ctx, name, value, labels)` | 単調増加カウンター（要求数、エラー数） |
+| `Metrics` | `Histogram(ctx, name, value, labels)` | ヒストグラム分布（レイテンシ、ペイロードサイズ） |
+| `Metrics` | `Gauge(ctx, name, value, labels)` | 現在の瞬間値（キューサイズ、アクティブ接続数） |
+| `Closer` | `Close() error` | クローズして保留中のデータをフラッシュ |
+
+### AI / LLM
+
+> 3つのフレームワークは戻り値の型が互換性がないため、抽象インターフェースは定義せず、共有設定型 `ai.Config` のみを提供します。
+>
+> 各プラグインのコンストラクタはフレームワークのネイティブ型を直接返します。
+
+| 入力 | コンストラクタ | 戻り値 |
+|------|-------------|--------|
+| `ai.Config` | `model.NewClient(cfg)` | `*openai.Client` |
+| `ai.Config` | `eino.NewChatModel(ctx, cfg)` | `model.ChatModel` (Eino インターフェース) |
+| `ai.Config` | `langchaingo.NewModel(cfg)` | `llms.Model` (LangChainGo インターフェース) |
 
 ---
 
@@ -117,11 +147,46 @@
 ### トランスポート（Transport）
 
 | プラグイン | モジュールパス | エンジン |
-|-----------|--------------|---------|
+|-----------|--------------|--------|
 | HTTP（標準ライブラリ） | `github.com/tx7do/go-wind-plugins/transport/http` | net/http |
 | HTTP（Gin） | `github.com/tx7do/go-wind-plugins/transport/http/gin` | gin-gonic/gin |
 | HTTP（Fiber） | `github.com/tx7do/go-wind-plugins/transport/http/fiber` | gofiber/fiber |
 | gRPC | `github.com/tx7do/go-wind-plugins/transport/grpc` | google.golang.org/grpc |
+
+### 分散トレーシング（Tracer）
+
+| プラグイン | モジュールパス | エンジン |
+|-----------|--------------|--------|
+| OTLP | `github.com/tx7do/go-wind-plugins/tracer/otlp` | OpenTelemetry Protocol (OTLP) |
+
+**説明**：OTLPはOpenTelemetryの標準プロトコルであり、Jaeger、Zipkin、SkyWalking、Tempo (Grafana)、Datadog、Alibaba Cloud ARMS、Tencent Cloud APMなど、すべての主要なバックエンドに対応しています。エンドポイントを設定するだけでバックエンドを切り替えられ、プラグインを変更する必要はありません。
+
+### メトリクス（Metrics）
+
+| プラグイン | モジュールパス | エンジン |
+|-----------|--------------|--------|
+| Prometheus | `github.com/tx7do/go-wind-plugins/metrics/prometheus` | Prometheus client_golang |
+| OpenTelemetry | `github.com/tx7do/go-wind-plugins/metrics/otel` | OTLP (gRPC/HTTP) |
+| Datadog | `github.com/tx7do/go-wind-plugins/metrics/datadog` | DogStatsD |
+
+### AI / LLM
+
+| プラグイン | モジュールパス | フレームワーク |
+|-----------|--------------|---------------|
+| OpenAI Client | `github.com/tx7do/go-wind-plugins/ai/openai` | sashabaranov/go-openai |
+| Eino | `github.com/tx7do/go-wind-plugins/ai/eino` | cloudwego/eino |
+| LangChainGo | `github.com/tx7do/go-wind-plugins/ai/langchaingo` | tmc/langchaingo |
+
+### ワークフロー
+
+> 4つのエンジンはワークフロー操作のパラメータ/戻り値型が互換性がありません。最小限の共通インターフェース `workflow.Client`（`Close() error`）のみ抽出します。
+
+| プラグイン | モジュールパス | フレームワーク |
+|-----------|--------------|---------------|
+| Argo Workflows | `github.com/tx7do/go-wind-plugins/workflow/argo` | Argo Workflows REST API |
+| Conductor | `github.com/tx7do/go-wind-plugins/workflow/conductor` | conductor-sdk/conductor-go |
+| GoWorkflows | `github.com/tx7do/go-wind-plugins/workflow/goworkflows` | cschleiden/go-workflows |
+| Temporal | `github.com/tx7do/go-wind-plugins/workflow/temporal` | temporal.io/sdk |
 
 ---
 
@@ -168,11 +233,38 @@ graph TB
         TGRPC[gRPC]
     end
 
+    subgraph Tracer["分散トレーシング"]
+        TOTLP[OTLP]
+    end
+
+    subgraph Metrics["メトリクス"]
+        MProm[Prometheus]
+        MOtel[OTLP]
+        MDatadog[Datadog]
+    end
+
+    subgraph AI["AI / LLM"]
+        AOpenai[OpenAI Client]
+        AEino[Eino]
+        ALc[LangChainGo]
+    end
+
+    subgraph Workflow["ワークフロー"]
+        WArgo[Argo]
+        WConductor[Conductor]
+        WGoWorkflows[GoWorkflows]
+        WTemporal[Temporal]
+    end
+
     App --> Core
     Core --> Config
     Core --> Registry
     Core --> Log
     Core --> Transport
+    Core --> Tracer
+    Core --> Metrics
+    Core --> AI
+    Core --> Workflow
 ```
 
 ---
@@ -224,6 +316,81 @@ go-wind-plugins/
 │   │   ├── gin/                    # Gin ドライバ
 │   │   └── fiber/                  # Fiber ドライバ
 │   └── grpc/                       # gRPC Server
+│
+├── tracer/                         # 分散トレーシングプラグイン
+│   ├── tracer.go                   # パッケージドキュメント
+│   ├── go.mod
+│   └── otlp/                       # OpenTelemetry Protocol (OTLP) 実装
+│       ├── otlp.go                 # ネイティブ *sdktrace.TracerProvider を返す
+│       └── go.mod
+│
+├── metrics/                        # メトリクスインターフェースとプラグイン
+│   ├── metrics.go                  # Metrics インターフェース定義（Counter/Histogram/Gauge）
+│   ├── doc.go                      # パッケージドキュメント
+│   ├── go.mod
+│   ├── prometheus/                 # Prometheus client_golang 実装
+│   │   ├── prometheus.go           # Prometheus provider 実装
+│   │   └── go.mod
+│   ├── otel/                       # OpenTelemetry OTLP 実装
+│   │   ├── otel.go                 # OTLP metric exporter 設定
+│   │   └── go.mod
+│   └── datadog/                    # Datadog DogStatsD 実装
+│       ├── datadog.go              # DogStatsD provider 実装
+│       └── go.mod
+│
+├── ai/                             # AI / LLM プラグイン（独立した自己完結モジュール）
+│   ├── openai/                     # OpenAI 互換クライアント（sashabaranov/go-openai）
+│   │   ├── client.go               # *openai.Client を返す
+│   │   ├── config.go               # ローカル Config 型
+│   │   ├── options.go              # HTTP クライアントオプション
+│   │   └── go.mod
+│   ├── eino/                       # ByteDance Eino フレームワーク（cloudwego/eino）
+│   │   ├── client.go               # model.ChatModel を返す
+│   │   ├── config.go               # ローカル Config 型
+│   │   ├── compose.go              # Chain/Graph/Workflow ヘルパー
+│   │   ├── chain.go                # Chain ノード追加メソッド
+│   │   ├── prompt.go               # ChatTemplate ヘルパー
+│   │   ├── tool.go                 # Tool ノードヘルパー
+│   │   ├── options.go              # ChatModel 設定モディファイア
+│   │   └── go.mod
+│   └── langchaingo/                # LangChainGo（tmc/langchaingo）
+│       ├── client.go               # llms.Model を返す
+│       ├── config.go               # ローカル Config 型
+│       ├── agent.go                # Agent / Executor ヘルパー
+│       ├── chain.go                # Chain ヘルパー
+│       ├── memory.go               # Memory ヘルパー
+│       ├── embedding.go            # Embedding ヘルパー
+│       ├── vectorstore.go          # VectorStore ヘルパー
+│       ├── options.go              # OpenAI/Ollama/HTTP オプション
+│       └── go.mod
+│
+├── workflow/                      # ワークフローエンジンプラグイン（Client/Worker 共通インターフェース定義）
+│   ├── workflow.go                # 共通インターフェース（Client/Worker）
+│   ├── go.mod
+│   ├── argo/                      # Argo Workflows（REST API）
+│   │   ├── client.go              # 送信/取得/一時停止/再開/終了
+│   │   ├── options.go             # 設定オプション + Argo 型定義
+│   │   ├── logger.go              # slog ログラッパー
+│   │   └── go.mod
+│   ├── conductor/                 # Netflix Conductor（conductor-go SDK）
+│   │   ├── client.go              # 開始/取得/一時停止/再開/終了
+│   │   ├── worker.go              # Task Worker
+│   │   ├── options.go             # 設定オプション
+│   │   ├── logger.go
+│   │   └── go.mod
+│   ├── goworkflows/               # cschleiden/go-workflows
+│   │   ├── client.go              # 作成/キャンセル/シグナル/待機
+│   │   ├── worker.go              # Workflow + Activity Worker
+│   │   ├── options.go             # Worker オプション
+│   │   ├── logger.go
+│   │   └── go.mod
+│   └── temporal/                  # Temporal（temporal.io/sdk）
+│       ├── client.go              # 実行/シグナル/クエリ/キャンセル（ネイティブ OTel トレーシング）
+│       ├── worker.go              # Worker + 組み込みメッセージ処理 Activity
+│       ├── workflow.go            # 組み込み BrokerMessageWorkflow
+│       ├── options.go             # 設定オプション
+│       ├── logger.go
+│       └── go.mod
 │
 ├── go.work                         # Go Workspace マルチモジュール管理
 ├── LICENSE
@@ -376,6 +543,140 @@ func main() {
     logger, _ := zap.NewZapLogger()
     logger.Info(context.Background(), "service started", "port", 8080)
     logger.With("module", "auth").Error(context.Background(), "token expired")
+}
+```
+
+### 分散トレーシング例（OTLP）
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/tx7do/go-wind-plugins/tracer/otlp"
+)
+
+func main() {
+    // OTLP TracerProvider を作成（グローバル TracerProvider として自動登録）
+    tp, err := otlp.New(
+        otlp.WithEndpoint("localhost:4317"),     // OTLP collector エンドポイント
+        otlp.WithServiceName("my-service"),      // サービス名
+        otlp.WithServiceVersion("v1.0.0"),       // サービスバージョン
+        otlp.WithSampleRatio(1.0),               // フルサンプリング
+        otlp.WithInsecure(true),                 // TLS を無効化
+    )
+    if err != nil {
+        panic(err)
+    }
+    defer tp.Shutdown(context.Background())
+
+    // 標準 OpenTelemetry API を使用して tracer を作成
+    tracer := tp.Tracer("my-service")
+
+    // Span を作成
+    ctx, span := tracer.Start(context.Background(), "handle-request")
+    defer span.End()
+
+    // ビジネスロジックをシミュレート
+    time.Sleep(100 * time.Millisecond)
+    fmt.Println("Request processed")
+
+    // ネストされた Span
+    _, childSpan := tracer.Start(ctx, "database-query")
+    defer childSpan.End()
+    time.Sleep(50 * time.Millisecond)
+    fmt.Println("Query completed")
+}
+```
+
+**前提条件**：OTLP collector を起動する必要があります。例として Jaeger を使用：
+
+```bash
+docker run -d --name jaeger \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 4317:4317 \
+  -p 16686:16686 \
+  jaegertracing/jaeger:latest
+```
+
+その後、http://localhost:16686 にアクセスしてトレースを確認できます。
+
+### メトリクス例（Prometheus）
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "net/http"
+
+    "github.com/prometheus/client_golang/promhttp"
+
+    "github.com/tx7do/go-wind-plugins/metrics/prometheus"
+)
+
+func main() {
+    // Prometheus メトリクス provider を作成
+    m, err := prometheus.NewWithDefaultRegistry(
+        prometheus.WithNamespace("myapp"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // メトリクスを記録
+    ctx := context.Background()
+    m.Counter(ctx, "requests_total", 1, map[string]string{"method": "GET"})
+    m.Histogram(ctx, "request_duration_seconds", 0.042, map[string]string{"method": "GET"})
+    m.Gauge(ctx, "queue_depth", 42, map[string]string{"queue": "email"})
+
+    // /metrics エンドポイントを公開
+    http.Handle("/metrics", promhttp.Handler())
+    log.Println("metrics on :9090/metrics")
+    log.Fatal(http.ListenAndServe(":9090", nil))
+}
+```
+
+### AI / LLM 例（LangChainGo）
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/tx7do/go-wind-plugins/ai"
+    "github.com/tx7do/go-wind-plugins/ai/langchaingo"
+)
+
+func main() {
+    cfg := &ai.Config{
+        Type:      ai.ModelTypeCloud,
+        ModelName: "gpt-4o",
+        Cloud: &ai.CloudConfig{
+            ApiKey:  "sk-xxx",
+            BaseUrl: "https://api.openai.com/v1",
+        },
+        TimeoutSeconds: 60,
+    }
+
+    llm, err := langchaingo.NewModel(cfg)
+    if err != nil {
+        panic(err)
+    }
+
+    resp, err := llm.Call(context.Background(),
+        "マイクロサービスを一文で説明してください",
+    )
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(resp)
 }
 ```
 

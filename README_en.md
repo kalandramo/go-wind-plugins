@@ -31,8 +31,8 @@ Built with a **Lego-like composition design** — each plugin implements only th
 
 ## Key Features
 
-- **Unified Interfaces**: Four domains (Config / Registry / Log / Transport) with standard interfaces defined by the core framework
-- **Multi-Engine Support**: 6 config centers, 8 registry providers, 6 logging backends, 3 HTTP drivers — covering mainstream tech stacks
+- **Unified Interfaces**: Six domains (Config / Registry / Log / Metrics / Transport / Tracer) with standard interfaces defined by the core framework
+- **Multi-Engine Support**: 6 config centers, 8 registry providers, 6 logging backends, 3 metrics backends, 3 HTTP drivers, 1 OTLP tracing protocol — covering mainstream tech stacks
 - **Zero Intrusion**: Business code depends only on interfaces, never on specific engine SDKs
 - **Independent Versioning**: Each submodule has its own `go.mod`, import only what you need
 - **Workspace Synergy**: Managed via `go.work` for a single-repo development experience
@@ -74,6 +74,38 @@ Built with a **Lego-like composition design** — each plugin implements only th
 | `Server` (HTTP) | `Handle / GET / POST / PUT / DELETE...` | Route registration |
 | `Server` (HTTP) | `Start(ctx)` / `Stop(ctx)` / `Endpoint()` | Lifecycle management |
 | `Driver` (HTTP) | `Handle / Start / Stop` | Framework adapter driver |
+
+### Tracer
+
+> Based on the OpenTelemetry standard. No custom interface — uses native OTel types directly.
+
+| Type | Methods | Description |
+|------|---------|-------------|
+| `*sdktrace.TracerProvider` | `Tracer(name) trace.Tracer` | Create a standard OTel Tracer |
+| `*sdktrace.TracerProvider` | `Shutdown(ctx)` | Shutdown provider, flush pending spans |
+| `trace.Tracer` | `Start(ctx, name, opts...)` | Create span, inject trace context |
+
+### Metrics
+
+| Interface | Methods | Description |
+|-----------|---------|-------------|
+| `Metrics` | `Counter(ctx, name, value, labels)` | Monotonically increasing counter (requests, errors) |
+| `Metrics` | `Histogram(ctx, name, value, labels)` | Distribution of observations (latency, payload size) |
+| `Metrics` | `Gauge(ctx, name, value, labels)` | Point-in-time value (queue depth, active connections) |
+| `Closer` | `Close() error` | Close and flush pending data |
+
+### AI / LLM
+
+> The three frameworks return incompatible types — no abstraction interface is defined.
+> Only a shared config type `ai.Config` is provided.
+>
+> Each plugin constructor returns its framework's native type directly.
+
+| Input | Constructor | Returns |
+|-------|-------------|---------|
+| `ai.Config` | `model.NewClient(cfg)` | `*openai.Client` |
+| `ai.Config` | `eino.NewChatModel(ctx, cfg)` | `model.ChatModel` (Eino interface) |
+| `ai.Config` | `langchaingo.NewModel(cfg)` | `llms.Model` (LangChainGo interface) |
 
 ---
 
@@ -123,6 +155,41 @@ Built with a **Lego-like composition design** — each plugin implements only th
 | HTTP (Fiber) | `github.com/tx7do/go-wind-plugins/transport/http/fiber` | gofiber/fiber |
 | gRPC | `github.com/tx7do/go-wind-plugins/transport/grpc` | google.golang.org/grpc |
 
+### Tracer
+
+| Plugin | Module Path | Engine |
+|--------|------------|--------|
+| OTLP | `github.com/tx7do/go-wind-plugins/tracer/otlp` | OpenTelemetry Protocol (OTLP) |
+
+**Note**: OTLP is the standard protocol of OpenTelemetry, supporting all major backends: Jaeger, Zipkin, SkyWalking, Tempo (Grafana), Datadog, Alibaba Cloud ARMS, Tencent Cloud APM, etc. Just configure the endpoint to switch backends without changing plugins.
+
+### Metrics
+
+| Plugin | Module Path | Engine |
+|--------|------------|--------|
+| Prometheus | `github.com/tx7do/go-wind-plugins/metrics/prometheus` | Prometheus client_golang |
+| OpenTelemetry | `github.com/tx7do/go-wind-plugins/metrics/otel` | OTLP (gRPC/HTTP) |
+| Datadog | `github.com/tx7do/go-wind-plugins/metrics/datadog` | DogStatsD |
+
+### AI / LLM
+
+| Plugin | Module Path | Framework |
+|--------|------------|-----------|
+| OpenAI Client | `github.com/tx7do/go-wind-plugins/ai/openai` | sashabaranov/go-openai |
+| Eino | `github.com/tx7do/go-wind-plugins/ai/eino` | cloudwego/eino |
+| LangChainGo | `github.com/tx7do/go-wind-plugins/ai/langchaingo` | tmc/langchaingo |
+
+### Workflow
+
+> The four engines have incompatible workflow operation parameters and return types. Only a minimal common interface `workflow.Client` (`Close() error`) is extracted.
+
+| Plugin | Module Path | Framework |
+|--------|------------|-----------|
+| Argo Workflows | `github.com/tx7do/go-wind-plugins/workflow/argo` | Argo Workflows REST API |
+| Conductor | `github.com/tx7do/go-wind-plugins/workflow/conductor` | conductor-sdk/conductor-go |
+| GoWorkflows | `github.com/tx7do/go-wind-plugins/workflow/goworkflows` | cschleiden/go-workflows |
+| Temporal | `github.com/tx7do/go-wind-plugins/workflow/temporal` | temporal.io/sdk |
+
 ---
 
 ## Architecture
@@ -168,11 +235,38 @@ graph TB
         TGRPC[gRPC]
     end
 
+    subgraph Tracer["Tracing"]
+        TOTLP[OTLP]
+    end
+
+    subgraph Metrics["Metrics"]
+        MProm[Prometheus]
+        MOtel[OTLP]
+        MDatadog[Datadog]
+    end
+
+    subgraph AI["AI / LLM"]
+        AOpenai[OpenAI Client]
+        AEino[Eino]
+        ALc[LangChainGo]
+    end
+
+    subgraph Workflow["Workflow"]
+        WArgo[Argo]
+        WConductor[Conductor]
+        WGoWorkflows[GoWorkflows]
+        WTemporal[Temporal]
+    end
+
     App --> Core
     Core --> Config
     Core --> Registry
     Core --> Log
     Core --> Transport
+    Core --> Tracer
+    Core --> Metrics
+    Core --> AI
+    Core --> Workflow
 ```
 
 ---
@@ -224,6 +318,81 @@ go-wind-plugins/
 │   │   ├── gin/                    # Gin driver
 │   │   └── fiber/                  # Fiber driver
 │   └── grpc/                       # gRPC Server
+│
+├── tracer/                         # Distributed tracing plugins
+│   ├── tracer.go                   # Package documentation
+│   ├── go.mod
+│   └── otlp/                       # OpenTelemetry Protocol (OTLP) implementation
+│       ├── otlp.go                 # Returns native *sdktrace.TracerProvider
+│       └── go.mod
+│
+├── metrics/                        # Metrics interfaces and plugins
+│   ├── metrics.go                  # Metrics interface (Counter/Histogram/Gauge)
+│   ├── doc.go                      # Package documentation
+│   ├── go.mod
+│   ├── prometheus/                 # Prometheus client_golang implementation
+│   │   ├── prometheus.go           # Prometheus provider
+│   │   └── go.mod
+│   ├── otel/                       # OpenTelemetry OTLP implementation
+│   │   ├── otel.go                 # OTLP metric exporter configuration
+│   │   └── go.mod
+│   └── datadog/                    # Datadog DogStatsD implementation
+│       ├── datadog.go              # DogStatsD provider
+│       └── go.mod
+│
+├── ai/                             # AI / LLM plugins (independent self-contained modules)
+│   ├── openai/                     # OpenAI-compatible client (sashabaranov/go-openai)
+│   │   ├── client.go               # Returns *openai.Client
+│   │   ├── config.go               # Local Config types
+│   │   ├── options.go              # HTTP client options
+│   │   └── go.mod
+│   ├── eino/                       # ByteDance Eino framework (cloudwego/eino)
+│   │   ├── client.go               # Returns model.ChatModel
+│   │   ├── config.go               # Local Config types
+│   │   ├── compose.go              # Chain/Graph/Workflow helpers
+│   │   ├── chain.go                # Chain node append methods
+│   │   ├── prompt.go               # ChatTemplate helpers
+│   │   ├── tool.go                 # Tool node helpers
+│   │   ├── options.go              # ChatModel config modifier
+│   │   └── go.mod
+│   └── langchaingo/                # LangChainGo (tmc/langchaingo)
+│       ├── client.go               # Returns llms.Model
+│       ├── config.go               # Local Config types
+│       ├── agent.go                # Agent / Executor helpers
+│       ├── chain.go                # Chain helpers
+│       ├── memory.go               # Memory helpers
+│       ├── embedding.go            # Embedding helpers
+│       ├── vectorstore.go          # VectorStore helpers
+│       ├── options.go              # OpenAI/Ollama/HTTP options
+│       └── go.mod
+│
+├── workflow/                      # Workflow engine plugins (defines Client/Worker interfaces)
+│   ├── workflow.go                # Common interfaces (Client/Worker)
+│   ├── go.mod
+│   ├── argo/                      # Argo Workflows (REST API)
+│   │   ├── client.go              # Submit/Get/Suspend/Resume/Terminate
+│   │   ├── options.go             # Config options + Argo type definitions
+│   │   ├── logger.go              # slog logging wrapper
+│   │   └── go.mod
+│   ├── conductor/                 # Netflix Conductor (conductor-go SDK)
+│   │   ├── client.go              # Start/Get/Pause/Resume/Terminate
+│   │   ├── worker.go              # Task Worker
+│   │   ├── options.go             # Config options
+│   │   ├── logger.go
+│   │   └── go.mod
+│   ├── goworkflows/               # cschleiden/go-workflows
+│   │   ├── client.go              # Create/Cancel/Signal/Wait
+│   │   ├── worker.go              # Workflow + Activity Worker
+│   │   ├── options.go             # Worker options
+│   │   ├── logger.go
+│   │   └── go.mod
+│   └── temporal/                  # Temporal (temporal.io/sdk)
+│       ├── client.go              # Execute/Signal/Query/Cancel (native OTel tracing)
+│       ├── worker.go              # Worker + built-in message processing Activity
+│       ├── workflow.go            # Built-in BrokerMessageWorkflow
+│       ├── options.go             # Config options
+│       ├── logger.go
+│       └── go.mod
 │
 ├── go.work                         # Go Workspace multi-module management
 ├── LICENSE
@@ -376,6 +545,140 @@ func main() {
     logger, _ := zap.NewZapLogger()
     logger.Info(context.Background(), "service started", "port", 8080)
     logger.With("module", "auth").Error(context.Background(), "token expired")
+}
+```
+
+### Distributed Tracing Example (OTLP)
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/tx7do/go-wind-plugins/tracer/otlp"
+)
+
+func main() {
+    // Create OTLP TracerProvider (auto-registers as global TracerProvider)
+    tp, err := otlp.New(
+        otlp.WithEndpoint("localhost:4317"),     // OTLP collector endpoint
+        otlp.WithServiceName("my-service"),      // Service name
+        otlp.WithServiceVersion("v1.0.0"),       // Service version
+        otlp.WithSampleRatio(1.0),               // Full sampling
+        otlp.WithInsecure(true),                 // Disable TLS
+    )
+    if err != nil {
+        panic(err)
+    }
+    defer tp.Shutdown(context.Background())
+
+    // Use the standard OpenTelemetry API to create a tracer
+    tracer := tp.Tracer("my-service")
+
+    // Create span
+    ctx, span := tracer.Start(context.Background(), "handle-request")
+    defer span.End()
+
+    // Simulate business logic
+    time.Sleep(100 * time.Millisecond)
+    fmt.Println("Request processed")
+
+    // Nested span
+    _, childSpan := tracer.Start(ctx, "database-query")
+    defer childSpan.End()
+    time.Sleep(50 * time.Millisecond)
+    fmt.Println("Query completed")
+}
+```
+
+**Prerequisite**: Start an OTLP collector first, e.g., using Jaeger:
+
+```bash
+docker run -d --name jaeger \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 4317:4317 \
+  -p 16686:16686 \
+  jaegertracing/jaeger:latest
+```
+
+Then visit http://localhost:16686 to view traces.
+
+### Metrics Example (Prometheus)
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "net/http"
+
+    "github.com/prometheus/client_golang/promhttp"
+
+    "github.com/tx7do/go-wind-plugins/metrics/prometheus"
+)
+
+func main() {
+    // Create Prometheus metrics provider
+    m, err := prometheus.NewWithDefaultRegistry(
+        prometheus.WithNamespace("myapp"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Record metrics
+    ctx := context.Background()
+    m.Counter(ctx, "requests_total", 1, map[string]string{"method": "GET"})
+    m.Histogram(ctx, "request_duration_seconds", 0.042, map[string]string{"method": "GET"})
+    m.Gauge(ctx, "queue_depth", 42, map[string]string{"queue": "email"})
+
+    // Expose /metrics endpoint for Prometheus scraping
+    http.Handle("/metrics", promhttp.Handler())
+    log.Println("metrics on :9090/metrics")
+    log.Fatal(http.ListenAndServe(":9090", nil))
+}
+```
+
+### AI / LLM Example (LangChainGo)
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/tx7do/go-wind-plugins/ai"
+    "github.com/tx7do/go-wind-plugins/ai/langchaingo"
+)
+
+func main() {
+    cfg := &ai.Config{
+        Type:      ai.ModelTypeCloud,
+        ModelName: "gpt-4o",
+        Cloud: &ai.CloudConfig{
+            ApiKey:  "sk-xxx",
+            BaseUrl: "https://api.openai.com/v1",
+        },
+        TimeoutSeconds: 60,
+    }
+
+    llm, err := langchaingo.NewModel(cfg)
+    if err != nil {
+        panic(err)
+    }
+
+    resp, err := llm.Call(context.Background(),
+        "Explain microservices in one sentence",
+    )
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(resp)
 }
 ```
 

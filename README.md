@@ -31,8 +31,8 @@
 
 ## 项目亮点
 
-- **统一接口**：四大领域（Config / Registry / Log / Transport）均由核心框架定义标准接口，插件只做实现
-- **多引擎支持**：6 种配置中心、8 种注册中心、6 种日志后端、3 种 HTTP 驱动，覆盖主流技术栈
+- **统一接口**：六大领域（Config / Registry / Log / Metrics / Transport / Tracer）均由核心框架定义标准接口，插件只做实现
+- **多引擎支持**：6 种配置中心、8 种注册中心、6 种日志后端、3 种指标后端、3 种 HTTP 驱动、1 种 OTLP 追踪协议，覆盖主流技术栈
 - **零侵入**：业务代码只依赖接口，不依赖具体引擎 SDK
 - **独立版本**：每个子模块独立 `go.mod`，按需引入，避免依赖膨胀
 - **Workspace 协同**：通过 `go.work` 管理多模块，开发体验如单仓项目
@@ -74,6 +74,25 @@
 | `Server` (HTTP) | `Handle / GET / POST / PUT / DELETE...` | 路由注册 |
 | `Server` (HTTP) | `Start(ctx)` / `Stop(ctx)` / `Endpoint()` | 生命周期管理 |
 | `Driver` (HTTP) | `Handle / Start / Stop` | 框架适配驱动 |
+
+### 分布式追踪（Tracer）
+
+> 基于 OpenTelemetry 标准，不定义自定义接口，直接使用原生 OTel 类型。
+
+| 类型 | 方法 | 说明 |
+|------|------|------|
+| `*sdktrace.TracerProvider` | `Tracer(name) trace.Tracer` | 创建标准 OTel Tracer |
+| `*sdktrace.TracerProvider` | `Shutdown(ctx)` | 关闭 provider，刷新未导出 span |
+| `trace.Tracer` | `Start(ctx, name, opts...)` | 创建 Span，注入 trace 上下文 |
+
+### 指标监控（Metrics）
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `Metrics` | `Counter(ctx, name, value, labels)` | 单调递增计数器（请求数、错误数） |
+| `Metrics` | `Histogram(ctx, name, value, labels)` | 直方图分布（延迟、负载大小） |
+| `Metrics` | `Gauge(ctx, name, value, labels)` | 当前瞬时值（队列深度、活跃连接数） |
+| `Closer` | `Close() error` | 关闭并刷新未发送数据 |
 
 ---
 
@@ -123,6 +142,33 @@
 | HTTP (Fiber) | `github.com/tx7do/go-wind-plugins/transport/http/fiber` | gofiber/fiber |
 | gRPC | `github.com/tx7do/go-wind-plugins/transport/grpc` | google.golang.org/grpc |
 
+### 分布式追踪（Tracer）
+
+| 插件 | 模块路径 | 引擎 |
+|------|---------|------|
+| OTLP | `github.com/tx7do/go-wind-plugins/tracer/otlp` | OpenTelemetry Protocol (OTLP) |
+
+**说明**：OTLP 是 OpenTelemetry 的标准协议，支持对接所有主流后端：Jaeger、Zipkin、SkyWalking、Tempo (Grafana)、Datadog、阿里云 ARMS、腾讯云 APM 等。只需配置 endpoint 即可切换后端，无需更换插件。
+
+### 指标监控（Metrics）
+
+| 插件 | 模块路径 | 引擎 |
+|------|---------|------|
+| Prometheus | `github.com/tx7do/go-wind-plugins/metrics/prometheus` | Prometheus client_golang |
+| OpenTelemetry | `github.com/tx7do/go-wind-plugins/metrics/otel` | OTLP (gRPC/HTTP) |
+| Datadog | `github.com/tx7do/go-wind-plugins/metrics/datadog` | DogStatsD |
+
+### 工作流引擎
+
+> 四个引擎的工作流操作参数/返回值类型互不兼容，仅提取最小公共接口 `workflow.Client`（`Close() error`）。
+
+| 插件 | 模块路径 | 框架 |
+|------|---------|------|
+| Argo Workflows | `github.com/tx7do/go-wind-plugins/workflow/argo` | Argo Workflows REST API |
+| Conductor | `github.com/tx7do/go-wind-plugins/workflow/conductor` | conductor-sdk/conductor-go |
+| GoWorkflows | `github.com/tx7do/go-wind-plugins/workflow/goworkflows` | cschleiden/go-workflows |
+| Temporal | `github.com/tx7do/go-wind-plugins/workflow/temporal` | temporal.io/sdk |
+
 ---
 
 ## 架构设计
@@ -168,11 +214,31 @@ graph TB
         TGRPC[gRPC]
     end
 
+    subgraph Tracer["分布式追踪"]
+        TOTLP[OTLP]
+    end
+
+    subgraph Metrics["指标监控"]
+        MProm[Prometheus]
+        MOtel[OTLP]
+        MDatadog[Datadog]
+    end
+
+    subgraph Workflow["工作流引擎"]
+        WArgo[Argo]
+        WConductor[Conductor]
+        WGoWorkflows[GoWorkflows]
+        WTemporal[Temporal]
+    end
+
     App --> Core
     Core --> Config
     Core --> Registry
     Core --> Log
     Core --> Transport
+    Core --> Tracer
+    Core --> Metrics
+    Core --> Workflow
 ```
 
 ---
@@ -224,6 +290,55 @@ go-wind-plugins/
 │   │   ├── gin/                    # Gin 驱动
 │   │   └── fiber/                  # Fiber 驱动
 │   └── grpc/                       # gRPC Server
+│
+├── tracer/                         # 分布式追踪插件
+│   ├── tracer.go                   # 包文档与说明
+│   ├── go.mod
+│   └── otlp/                       # OpenTelemetry Protocol (OTLP) 实现
+│       ├── otlp.go                 # 返回原生 *sdktrace.TracerProvider
+│       └── go.mod
+│
+├── metrics/                        # 指标监控接口与插件
+│   ├── metrics.go                  # Metrics 接口定义（Counter/Histogram/Gauge）
+│   ├── doc.go                      # 包文档
+│   ├── go.mod
+│   ├── prometheus/                 # Prometheus client_golang 实现
+│   │   ├── prometheus.go           # Prometheus provider 实现
+│   │   └── go.mod
+│   ├── otel/                       # OpenTelemetry OTLP 实现
+│   │   ├── otel.go                 # OTLP metric exporter 配置
+│   │   └── go.mod
+│   └── datadog/                    # Datadog DogStatsD 实现
+│       ├── datadog.go              # DogStatsD provider 实现
+│       └── go.mod
+│
+├── workflow/                      # 工作流引擎插件（定义 Client/Worker 公共接口）
+│   ├── workflow.go                # 公共接口（Client/Worker）
+│   ├── go.mod
+│   ├── argo/                      # Argo Workflows（REST API）
+│   │   ├── client.go              # 提交/查询/挂起/恢复/终止
+│   │   ├── options.go             # 配置选项 + Argo 类型定义
+│   │   ├── logger.go              # slog 日志封装
+│   │   └── go.mod
+│   ├── conductor/                 # Netflix Conductor（conductor-go SDK）
+│   │   ├── client.go              # 启动/查询/暂停/恢复/终止
+│   │   ├── worker.go              # Task Worker
+│   │   ├── options.go             # 配置选项
+│   │   ├── logger.go
+│   │   └── go.mod
+│   ├── goworkflows/               # cschleiden/go-workflows
+│   │   ├── client.go              # 创建/取消/信号/等待
+│   │   ├── worker.go              # Workflow + Activity Worker
+│   │   ├── options.go             # Worker 选项
+│   │   ├── logger.go
+│   │   └── go.mod
+│   └── temporal/                  # Temporal（temporal.io/sdk）
+│       ├── client.go              # 执行/信号/查询/取消（原生 OTel 链路追踪）
+│       ├── worker.go              # Worker + 内置消息处理 Activity
+│       ├── workflow.go            # 内置 BrokerMessageWorkflow
+│       ├── options.go             # 配置选项
+│       ├── logger.go
+│       └── go.mod
 │
 ├── go.work                         # Go Workspace 多模块管理
 ├── LICENSE
@@ -376,6 +491,101 @@ func main() {
     logger, _ := zap.NewZapLogger()
     logger.Info(context.Background(), "service started", "port", 8080)
     logger.With("module", "auth").Error(context.Background(), "token expired")
+}
+```
+
+### 分布式追踪示例（OTLP）
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/tx7do/go-wind-plugins/tracer/otlp"
+)
+
+func main() {
+    // 创建 OTLP TracerProvider（自动注册为全局 TracerProvider）
+    tp, err := otlp.New(
+        otlp.WithEndpoint("localhost:4317"),     // OTLP collector endpoint
+        otlp.WithServiceName("my-service"),      // 服务名称
+        otlp.WithServiceVersion("v1.0.0"),       // 服务版本
+        otlp.WithSampleRatio(1.0),               // 全量采样
+        otlp.WithInsecure(true),                 // 禁用 TLS
+    )
+    if err != nil {
+        panic(err)
+    }
+    defer tp.Shutdown(context.Background())
+
+    // 使用标准 OpenTelemetry API 创建 tracer
+    tracer := tp.Tracer("my-service")
+
+    // 创建 span
+    ctx, span := tracer.Start(context.Background(), "handle-request")
+    defer span.End()
+
+    // 模拟业务逻辑
+    time.Sleep(100 * time.Millisecond)
+    fmt.Println("Request processed")
+
+    // 嵌套 span
+    _, childSpan := tracer.Start(ctx, "database-query")
+    defer childSpan.End()
+    time.Sleep(50 * time.Millisecond)
+    fmt.Println("Query completed")
+}
+```
+
+**运行前提**：需要先启动 OTLP collector，例如使用 Jaeger：
+
+```bash
+docker run -d --name jaeger \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 4317:4317 \
+  -p 16686:16686 \
+  jaegertracing/jaeger:latest
+```
+
+然后访问 http://localhost:16686 查看 trace。
+
+### 指标监控示例（Prometheus）
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "net/http"
+
+    "github.com/prometheus/client_golang/promhttp"
+
+    "github.com/tx7do/go-wind-plugins/metrics/prometheus"
+)
+
+func main() {
+    // 创建 Prometheus 指标 provider
+    m, err := prometheus.NewWithDefaultRegistry(
+        prometheus.WithNamespace("myapp"),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 记录指标
+    ctx := context.Background()
+    m.Counter(ctx, "requests_total", 1, map[string]string{"method": "GET"})
+    m.Histogram(ctx, "request_duration_seconds", 0.042, map[string]string{"method": "GET"})
+    m.Gauge(ctx, "queue_depth", 42, map[string]string{"queue": "email"})
+
+    // 暴露 /metrics 端点供 Prometheus 抓取
+    http.Handle("/metrics", promhttp.Handler())
+    log.Println("metrics on :9090/metrics")
+    log.Fatal(http.ListenAndServe(":9090", nil))
 }
 ```
 

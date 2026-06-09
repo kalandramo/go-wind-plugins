@@ -6,7 +6,7 @@ require (
 	github.com/go-chassis/cari v0.9.0
 	github.com/go-chassis/sc-client v0.7.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/tx7do/go-wind v0.0.0-20260609092115-0a5df91d8c74
+	github.com/tx7do/go-wind v0.0.1
 	github.com/tx7do/go-wind-plugins/registry v0.0.0-00010101000000-000000000000
 )
 

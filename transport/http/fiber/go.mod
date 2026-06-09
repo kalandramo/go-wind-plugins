@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.12
-	github.com/tx7do/go-wind-plugins/transport/http v0.0.0-20260609092514-978e7462fe25
+	github.com/tx7do/go-wind-plugins/transport/http v0.0.0-20260609103157-25483f3d73c4
 )
 
 require (
@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.21 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
-	github.com/tx7do/go-wind v0.0.0-20260609092115-0a5df91d8c74 // indirect
+	github.com/tx7do/go-wind v0.0.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.70.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect

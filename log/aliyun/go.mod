@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/aliyun/aliyun-log-go-sdk v0.1.117
-	github.com/tx7do/go-wind v0.0.0-20260609092115-0a5df91d8c74
+	github.com/tx7do/go-wind v0.0.1
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -37,9 +37,9 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
-// Exclude the old monolithic genproto to avoid ambiguous import with the
-// split module google.golang.org/genproto/googleapis/rpc.
-exclude google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4
+// Redirect the old monolithic genproto to a version where googleapis/rpc
+// has been split out, avoiding ambiguous import conflicts.
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d
 
 // github.com/lyft/protoc-gen-validate has moved to envoyproxy/protoc-gen-validate.
 // The old repository is gone, so we redirect all transitive references.

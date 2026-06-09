@@ -26,4 +26,8 @@ require (
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d
+
+replace github.com/lyft/protoc-gen-validate => github.com/envoyproxy/protoc-gen-validate v0.10.1
+
 replace github.com/tx7do/go-wind-plugins/config => ../

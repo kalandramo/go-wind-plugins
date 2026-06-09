@@ -38,8 +38,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-// Exclude the old monolithic genproto to avoid ambiguous import with the
-// split module google.golang.org/genproto/googleapis/rpc.
-exclude google.golang.org/genproto v0.0.0-20221014213838-99cd37c6964a
+// Redirect the old monolithic genproto to a version where googleapis/rpc
+// has been split out, avoiding ambiguous import conflicts.
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d
+
+replace github.com/lyft/protoc-gen-validate => github.com/envoyproxy/protoc-gen-validate v0.10.1
 
 replace github.com/tx7do/go-wind-plugins/config => ../

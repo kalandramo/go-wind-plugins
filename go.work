@@ -25,15 +25,21 @@ use (
 	./config/apollo
 	./config/consul
 	./config/etcd
+	./config/file
+	./config/fs
+	./config/http
 	./config/kubernetes
 	./config/nacos
+	./config/oss
 	./config/polaris
+	./config/redis
 	./encoding
 	./encoding/json
 	./encoding/proto
 	./encoding/gob
 	./encoding/msgpack
 	./encoding/toml
+	./encoding/thrift
 	./encoding/xml
 	./encoding/yaml
 	./log

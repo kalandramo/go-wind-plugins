@@ -7,6 +7,6 @@ require (
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1
 )
 
-require github.com/golang/snappy v0.0.1 // indirect
+require github.com/golang/snappy v1.0.0 // indirect
 
 replace github.com/tx7do/go-wind-plugins/encoding => ../

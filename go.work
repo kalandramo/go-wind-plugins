@@ -24,6 +24,7 @@ use (
 	./config
 	./config/apollo
 	./config/consul
+	./config/env
 	./config/etcd
 	./config/file
 	./config/fs
@@ -33,6 +34,8 @@ use (
 	./config/oss
 	./config/polaris
 	./config/redis
+	./config/vault
+	./config/zookeeper
 	./encoding
 	./encoding/avro
 	./encoding/bson

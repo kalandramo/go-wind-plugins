@@ -105,6 +105,15 @@
 | `ai.Config` | `eino.NewChatModel(ctx, cfg)` | `model.ChatModel` (Eino インターフェース) |
 | `ai.Config` | `langchaingo.NewModel(cfg)` | `llms.Model` (LangChainGo インターフェース) |
 
+### エンコーディング（Encoding）
+
+| インターフェース/関数 | メソッド | 説明 |
+|------|------|------|
+| `Codec` | `Marshal(v) ([]byte, error)` | シリアライズ |
+| `Codec` | `Unmarshal(data, v) error` | デシリアライズ |
+| `Codec` | `Name() string` | コーデック名（json/proto/yaml） |
+| パッケージ関数 | `RegisterCodec(c)` / `GetCodec(name)` | グローバルレジストリ |
+
 ---
 
 ## プラグイン一覧
@@ -177,6 +186,14 @@
 | Eino | `github.com/tx7do/go-wind-plugins/ai/eino` | cloudwego/eino |
 | LangChainGo | `github.com/tx7do/go-wind-plugins/ai/langchaingo` | tmc/langchaingo |
 
+### エンコーディング（Encoding）
+
+| プラグイン | モジュールパス | エンジン |
+|-----------|--------------|--------|
+| JSON | `github.com/tx7do/go-wind-plugins/encoding/json` | encoding/json |
+| Protobuf | `github.com/tx7do/go-wind-plugins/encoding/proto` | google.golang.org/protobuf |
+| YAML | `github.com/tx7do/go-wind-plugins/encoding/yaml` | gopkg.in/yaml.v3 |
+
 ### ワークフロー
 
 > 4つのエンジンはワークフロー操作のパラメータ/戻り値型が互換性がありません。最小限の共通インターフェース `workflow.Client`（`Close() error`）のみ抽出します。
@@ -187,6 +204,15 @@
 | Conductor | `github.com/tx7do/go-wind-plugins/workflow/conductor` | conductor-sdk/conductor-go |
 | GoWorkflows | `github.com/tx7do/go-wind-plugins/workflow/goworkflows` | cschleiden/go-workflows |
 | Temporal | `github.com/tx7do/go-wind-plugins/workflow/temporal` | temporal.io/sdk |
+
+### オブジェクトストレージ
+
+> 2つの OSS 実装は基盤 SDK と戻り値型が互換性がありません。それぞれがローカル `Config` を定義し、共通インターフェースは抽出しません。
+
+| プラグイン | モジュールパス | フレームワーク |
+|-----------|--------------|---------------|
+| MinIO | `github.com/tx7do/go-wind-plugins/oss/minio` | minio/minio-go |
+| S3 | `github.com/tx7do/go-wind-plugins/oss/s3` | aws/aws-sdk-go-v2 |
 
 ---
 
@@ -256,6 +282,11 @@ graph TB
         WTemporal[Temporal]
     end
 
+    subgraph OSS["オブジェクトストレージ"]
+        OMinio[MinIO]
+        OS3[S3]
+    end
+
     App --> Core
     Core --> Config
     Core --> Registry
@@ -265,6 +296,14 @@ graph TB
     Core --> Metrics
     Core --> AI
     Core --> Workflow
+    Core --> OSS
+    Core --> Encoding
+
+    subgraph Encoding["エンコーディング"]
+        EJSON[JSON]
+        EProto[Protobuf]
+        EYAML[YAML]
+    end
 ```
 
 ---
@@ -390,6 +429,31 @@ go-wind-plugins/
 │       ├── workflow.go            # 組み込み BrokerMessageWorkflow
 │       ├── options.go             # 設定オプション
 │       ├── logger.go
+│       └── go.mod
+│
+├── encoding/                      # エンコーディングインターフェースとプラグイン
+│   ├── encoding.go                # Codec インターフェース定義 + レジストリ
+│   ├── go.mod
+│   ├── json/                      # JSON コーデック（encoding/json）
+│   │   ├── json.go
+│   │   └── go.mod
+│   ├── proto/                     # Protobuf コーデック（google.golang.org/protobuf）
+│   │   ├── proto.go
+│   │   └── go.mod
+│   └── yaml/                      # YAML コーデック（gopkg.in/yaml.v3）
+│       ├── yaml.go
+│       └── go.mod
+│
+├── oss/                           # オブジェクトストレージプラグイン（自己完結型設定）
+│   ├── minio/                     # MinIO（minio/minio-go）
+│   │   ├── client.go              # *minio.Client を返す
+│   │   ├── config.go              # ローカル Config 型
+│   │   └── go.mod
+│   └── s3/                        # AWS S3 互換（aws-sdk-go-v2）
+│       ├── client.go              # *s3.Client を返す
+│       ├── storage.go             # Storage ラッパー（デフォルト bucket）
+│       ├── config.go              # ローカル Config 型
+│       ├── errors.go              # センチネルエラー
 │       └── go.mod
 │
 ├── go.work                         # Go Workspace マルチモジュール管理

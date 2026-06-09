@@ -107,6 +107,15 @@ Built with a **Lego-like composition design** — each plugin implements only th
 | `ai.Config` | `eino.NewChatModel(ctx, cfg)` | `model.ChatModel` (Eino interface) |
 | `ai.Config` | `langchaingo.NewModel(cfg)` | `llms.Model` (LangChainGo interface) |
 
+### Encoding
+
+| Interface/Func | Method | Description |
+|------|------|------|
+| `Codec` | `Marshal(v) ([]byte, error)` | Serialize |
+| `Codec` | `Unmarshal(data, v) error` | Deserialize |
+| `Codec` | `Name() string` | Codec name (json/proto/yaml) |
+| Package funcs | `RegisterCodec(c)` / `GetCodec(name)` | Global registry |
+
 ---
 
 ## Plugin Matrix
@@ -179,6 +188,14 @@ Built with a **Lego-like composition design** — each plugin implements only th
 | Eino | `github.com/tx7do/go-wind-plugins/ai/eino` | cloudwego/eino |
 | LangChainGo | `github.com/tx7do/go-wind-plugins/ai/langchaingo` | tmc/langchaingo |
 
+### Encoding
+
+| Plugin | Module Path | Engine |
+|--------|------------|--------|
+| JSON | `github.com/tx7do/go-wind-plugins/encoding/json` | encoding/json |
+| Protobuf | `github.com/tx7do/go-wind-plugins/encoding/proto` | google.golang.org/protobuf |
+| YAML | `github.com/tx7do/go-wind-plugins/encoding/yaml` | gopkg.in/yaml.v3 |
+
 ### Workflow
 
 > The four engines have incompatible workflow operation parameters and return types. Only a minimal common interface `workflow.Client` (`Close() error`) is extracted.
@@ -189,6 +206,15 @@ Built with a **Lego-like composition design** — each plugin implements only th
 | Conductor | `github.com/tx7do/go-wind-plugins/workflow/conductor` | conductor-sdk/conductor-go |
 | GoWorkflows | `github.com/tx7do/go-wind-plugins/workflow/goworkflows` | cschleiden/go-workflows |
 | Temporal | `github.com/tx7do/go-wind-plugins/workflow/temporal` | temporal.io/sdk |
+
+### Object Storage
+
+> The two OSS implementations have incompatible SDKs and return types. Each defines its own local `Config`; no shared interface is extracted.
+
+| Plugin | Module Path | Framework |
+|--------|------------|-----------|
+| MinIO | `github.com/tx7do/go-wind-plugins/oss/minio` | minio/minio-go |
+| S3 | `github.com/tx7do/go-wind-plugins/oss/s3` | aws/aws-sdk-go-v2 |
 
 ---
 
@@ -258,6 +284,11 @@ graph TB
         WTemporal[Temporal]
     end
 
+    subgraph OSS["Object Storage"]
+        OMinio[MinIO]
+        OS3[S3]
+    end
+
     App --> Core
     Core --> Config
     Core --> Registry
@@ -267,6 +298,14 @@ graph TB
     Core --> Metrics
     Core --> AI
     Core --> Workflow
+    Core --> OSS
+    Core --> Encoding
+
+    subgraph Encoding["Encoding"]
+        EJSON[JSON]
+        EProto[Protobuf]
+        EYAML[YAML]
+    end
 ```
 
 ---
@@ -392,6 +431,31 @@ go-wind-plugins/
 │       ├── workflow.go            # Built-in BrokerMessageWorkflow
 │       ├── options.go             # Config options
 │       ├── logger.go
+│       └── go.mod
+│
+├── encoding/                      # Encoding interfaces and plugins
+│   ├── encoding.go                # Codec interface definition + registry
+│   ├── go.mod
+│   ├── json/                      # JSON codec (encoding/json)
+│   │   ├── json.go
+│   │   └── go.mod
+│   ├── proto/                     # Protobuf codec (google.golang.org/protobuf)
+│   │   ├── proto.go
+│   │   └── go.mod
+│   └── yaml/                      # YAML codec (gopkg.in/yaml.v3)
+│       ├── yaml.go
+│       └── go.mod
+│
+├── oss/                           # Object storage plugins (self-contained config)
+│   ├── minio/                     # MinIO (minio/minio-go)
+│   │   ├── client.go              # Returns *minio.Client
+│   │   ├── config.go              # Local Config types
+│   │   └── go.mod
+│   └── s3/                        # AWS S3 compatible (aws-sdk-go-v2)
+│       ├── client.go              # Returns *s3.Client
+│       ├── storage.go             # Storage wrapper (default bucket)
+│       ├── config.go              # Local Config types
+│       ├── errors.go              # Sentinel errors
 │       └── go.mod
 │
 ├── go.work                         # Go Workspace multi-module management

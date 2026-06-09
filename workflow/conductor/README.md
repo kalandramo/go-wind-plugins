@@ -79,6 +79,12 @@ worker, err := client.StartWorker("greet", GreetTask, 1, 100*time.Millisecond)
 // Get workflow status
 workflow, err := client.GetWorkflow(ctx, workflowID, true)
 
+// Monitor execution asynchronously
+ch, err := client.MonitorExecution(workflowID)
+for run := range ch {
+    fmt.Printf("status: %s\n", run.Status)
+}
+
 // Pause / Resume
 client.Pause(ctx, workflowID)
 client.Resume(ctx, workflowID)
@@ -93,6 +99,38 @@ client.Retry(ctx, workflowID, false)
 client.Restart(ctx, workflowID, true)
 ```
 
+### 5. Task Worker with Full Configuration
+
+```go
+worker, err := client.StartWorkerWithConfig(conductor.WorkerConfig{
+    TaskType:     "greet",
+    Concurrency:  3,
+    PollInterval: 200 * time.Millisecond,
+    Domain:       "production",
+}, GreetTask)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(worker.TaskType()) // "greet"
+fmt.Println(worker.IsRunning()) // true
+
+// Note: The Conductor Go SDK TaskRunner does not expose a direct Stop method.
+// worker.Stop() marks the worker as stopped, but the underlying poller
+// will stop when the process exits.
+worker.Stop()
+```
+
+### 6. Access Underlying SDK
+
+```go
+// Get the raw API client for advanced operations
+apiClient := client.APIClient()
+
+// Get the workflow executor for low-level control
+wfExecutor := client.WorkflowExecutor()
+```
+
 ## Configuration
 
 ### ClientOptions
@@ -103,6 +141,16 @@ client.Restart(ctx, workflowID, true)
 | AuthKey     | Authentication key (for Orkes Cloud)     | -                            |
 | AuthSecret  | Authentication secret (for Orkes Cloud)  | -                            |
 
+### StartWorkflowOptions
+
+| Field          | Description                              | Default |
+|----------------|------------------------------------------|---------|
+| Name           | Workflow definition name                 | -       |
+| Version        | Workflow definition version              | latest  |
+| Input          | Workflow input data (`map[string]any`)   | -       |
+| CorrelationID  | Message correlation ID                   | -       |
+| Priority       | Workflow priority                        | -       |
+
 ### WorkerConfig
 
 | Field        | Description                        | Default    |
@@ -111,6 +159,39 @@ client.Restart(ctx, workflowID, true)
 | Concurrency  | Number of concurrent worker threads| `1`        |
 | PollInterval | Interval between poll requests     | `100ms`    |
 | Domain       | Task domain for isolation           | -          |
+
+## API Reference
+
+### WorkflowClient Methods
+
+| Method | Description |
+|--------|-------------|
+| `NewClient(opts)` | Create a client connected to Conductor server |
+| `NewClientFromEnv()` | Create a client from environment variables |
+| `StartWorkflow(ctx, opts)` | Start a workflow asynchronously, returns instance ID |
+| `StartWorkflowSync(ctx, opts, waitUntilTask)` | Start and block until a task completes |
+| `MonitorExecution(workflowID)` | Get a channel for async workflow result monitoring |
+| `GetWorkflow(ctx, id, includeTasks)` | Retrieve current workflow state |
+| `Terminate(ctx, id, reason)` | Terminate a running workflow |
+| `Pause(ctx, id)` | Pause an ongoing workflow |
+| `Resume(ctx, id)` | Resume a paused workflow |
+| `Retry(ctx, id, resumeSubwf)` | Retry from the last failed task |
+| `Restart(ctx, id, useLatestDef)` | Restart from the beginning |
+| `StartWorker(taskType, handler, concurrency, interval)` | Start a simple task worker |
+| `StartWorkerWithConfig(config, handler)` | Start a task worker with full config |
+| `APIClient()` | Get the underlying Conductor `APIClient` |
+| `WorkflowExecutor()` | Get the underlying `WorkflowExecutor` |
+| `Close()` | Close the client |
+
+### TaskWorker Methods
+
+| Method | Description |
+|--------|-------------|
+| `Stop()` | Mark the worker as stopped (see note below) |
+| `TaskType()` | Get the task type this worker polls for |
+| `IsRunning()` | Check if the worker is still active |
+
+> **Note on Stop():** The Conductor Go SDK `TaskRunner` does not expose a direct stop method. `Stop()` marks the internal state as stopped, but the underlying poller goroutine will continue until the process exits. For graceful shutdown, consider running workers in a separate goroutine and using process-level signals.
 
 ## Architecture
 

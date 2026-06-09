@@ -1,4 +1,4 @@
-package grpc
+package server
 
 import (
 	"context"
@@ -21,8 +21,6 @@ type Middleware = grpc.UnaryServerInterceptor
 type StreamMiddleware = grpc.StreamServerInterceptor
 
 // Server 封装 gRPC 服务器，实现 transport.Server 接口。
-// 它管理与框架一致的 Start/Stop 生命周期，同时暴露底层 *grpc.Server
-// 供调用方通过 RegisterService 注册 protobuf 服务。
 type Server struct {
 	addr             string
 	server           *grpc.Server
@@ -33,7 +31,6 @@ type Server struct {
 }
 
 // NewServer 创建一个 gRPC 服务器实例。
-//
 // 若未通过选项提供 *grpc.Server，将在 Start 时按默认配置创建一个。
 func NewServer(addr string, opts ...Option) *Server {
 	srv := &Server{addr: addr}
@@ -43,23 +40,20 @@ func NewServer(addr string, opts ...Option) *Server {
 	return srv
 }
 
-// Use 注册一元拦截器中间件，按注册顺序执行。
-// 必须在 Start 之前调用。
+// Use 注册一元拦截器中间件，按注册顺序执行。必须在 Start 之前调用。
 func (s *Server) Use(middlewares ...Middleware) {
 	s.middlewares = append(s.middlewares, middlewares...)
 }
 
-// UseStream 注册流拦截器中间件，按注册顺序执行。
-// 必须在 Start 之前调用。
+// UseStream 注册流拦截器中间件，按注册顺序执行。必须在 Start 之前调用。
 func (s *Server) UseStream(middlewares ...StreamMiddleware) {
 	s.streamMiddleware = append(s.streamMiddleware, middlewares...)
 }
 
-// Server 返回底层的 *grpc.Server，调用方可通过它注册 protobuf 服务。
-// 若尚未初始化，返回 nil。
+// Server 返回底层的 *grpc.Server。
 func (s *Server) Server() *grpc.Server { return s.server }
 
-// RegisterService 注册一个 gRPC 服务及其实现，等价于直接操作底层 *grpc.Server。
+// RegisterService 注册一个 gRPC 服务及其实现。
 func (s *Server) RegisterService(sd *grpc.ServiceDesc, ss any) {
 	s.ensureServer()
 	s.server.RegisterService(sd, ss)
@@ -93,7 +87,6 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 // Stop 优雅关闭 gRPC 服务器。
-// 若设置了 timeout（通过 WithTimeout），超时后强制关闭。
 func (s *Server) Stop(ctx context.Context) error {
 	if s.server == nil {
 		return nil
@@ -113,7 +106,6 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // Endpoint 返回服务器的访问地址。
-// 若服务器已启动，返回实际监听地址；否则返回配置地址。
 func (s *Server) Endpoint() string {
 	addr := s.addr
 	if s.listener != nil {
@@ -132,7 +124,7 @@ func (s *Server) Endpoint() string {
 // Addr 返回服务器的监听地址。
 func (s *Server) Addr() string { return s.addr }
 
-// ensureServer 确保底层 grpc.Server 已初始化，未设置时创建一个。
+// ensureServer 确保底层 grpc.Server 已初始化。
 func (s *Server) ensureServer() {
 	if s.server != nil {
 		return
@@ -140,12 +132,10 @@ func (s *Server) ensureServer() {
 
 	var opts []grpc.ServerOption
 
-	// 一元拦截器链
 	if len(s.middlewares) > 0 {
 		opts = append(opts, grpc.ChainUnaryInterceptor(s.middlewares...))
 	}
 
-	// 流拦截器链
 	if len(s.streamMiddleware) > 0 {
 		opts = append(opts, grpc.ChainStreamInterceptor(s.streamMiddleware...))
 	}
@@ -154,7 +144,6 @@ func (s *Server) ensureServer() {
 }
 
 // Chain 将多个一元拦截器组合为单个拦截器，按入参顺序执行。
-// 常用于构建可复用的拦截器组，便于传入单个 Use 调用。
 func Chain(middlewares ...Middleware) Middleware {
 	switch len(middlewares) {
 	case 0:
@@ -163,7 +152,6 @@ func Chain(middlewares ...Middleware) Middleware {
 		return middlewares[0]
 	}
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		// 从最后一个拦截器向前组装调用链
 		h := handler
 		for i := len(middlewares) - 1; i >= 0; i-- {
 			interceptor, next := middlewares[i], h

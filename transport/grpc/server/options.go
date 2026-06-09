@@ -1,4 +1,4 @@
-package grpc
+package server
 
 import (
 	"time"
@@ -10,7 +10,6 @@ import (
 type Option func(*Server)
 
 // WithServer 通过选项直接设置底层 *grpc.Server。
-// 若调用方已有自定义配置的 grpc.Server，可由此注入。
 func WithServer(srv *grpc.Server) Option {
 	return func(s *Server) { s.server = srv }
 }
@@ -26,7 +25,6 @@ func WithStreamMiddleware(middlewares ...StreamMiddleware) Option {
 }
 
 // WithTimeout 设置服务器的优雅关闭超时时间。
-// 若设置为 0，则使用 GracefulStop 无限等待。
 func WithTimeout(timeout time.Duration) Option {
 	return func(s *Server) { s.timeout = timeout }
 }

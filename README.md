@@ -94,6 +94,15 @@
 | `Metrics` | `Gauge(ctx, name, value, labels)` | 当前瞬时值（队列深度、活跃连接数） |
 | `Closer` | `Close() error` | 关闭并刷新未发送数据 |
 
+### 编解码（Encoding）
+
+| 接口/函数 | 方法 | 说明 |
+|------|------|------|
+| `Codec` | `Marshal(v) ([]byte, error)` | 序列化 |
+| `Codec` | `Unmarshal(data, v) error` | 反序列化 |
+| `Codec` | `Name() string` | 编解码器名称（json/proto/yaml） |
+| 包函数 | `RegisterCodec(c)` / `GetCodec(name)` | 全局注册表 |
+
 ---
 
 ## 插件矩阵
@@ -158,6 +167,14 @@
 | OpenTelemetry | `github.com/tx7do/go-wind-plugins/metrics/otel` | OTLP (gRPC/HTTP) |
 | Datadog | `github.com/tx7do/go-wind-plugins/metrics/datadog` | DogStatsD |
 
+### 编解码（Encoding）
+
+| 插件 | 模块路径 | 引擎 |
+|------|---------|------|
+| JSON | `github.com/tx7do/go-wind-plugins/encoding/json` | encoding/json |
+| Protobuf | `github.com/tx7do/go-wind-plugins/encoding/proto` | google.golang.org/protobuf |
+| YAML | `github.com/tx7do/go-wind-plugins/encoding/yaml` | gopkg.in/yaml.v3 |
+
 ### 工作流引擎
 
 > 四个引擎的工作流操作参数/返回值类型互不兼容，仅提取最小公共接口 `workflow.Client`（`Close() error`）。
@@ -168,6 +185,15 @@
 | Conductor | `github.com/tx7do/go-wind-plugins/workflow/conductor` | conductor-sdk/conductor-go |
 | GoWorkflows | `github.com/tx7do/go-wind-plugins/workflow/goworkflows` | cschleiden/go-workflows |
 | Temporal | `github.com/tx7do/go-wind-plugins/workflow/temporal` | temporal.io/sdk |
+
+### 对象存储
+
+> 两个 OSS 实现的底层 SDK 和返回类型不兼容，各自定义本地 `Config`，不提取共享接口。
+
+| 插件 | 模块路径 | 框架 |
+|------|---------|------|
+| MinIO | `github.com/tx7do/go-wind-plugins/oss/minio` | minio/minio-go |
+| S3 | `github.com/tx7do/go-wind-plugins/oss/s3` | aws/aws-sdk-go-v2 |
 
 ---
 
@@ -231,6 +257,11 @@ graph TB
         WTemporal[Temporal]
     end
 
+    subgraph OSS["对象存储"]
+        OMinio[MinIO]
+        OS3[S3]
+    end
+
     App --> Core
     Core --> Config
     Core --> Registry
@@ -239,6 +270,14 @@ graph TB
     Core --> Tracer
     Core --> Metrics
     Core --> Workflow
+    Core --> OSS
+    Core --> Encoding
+
+    subgraph Encoding["编解码"]
+        EJSON[JSON]
+        EProto[Protobuf]
+        EYAML[YAML]
+    end
 ```
 
 ---
@@ -338,6 +377,31 @@ go-wind-plugins/
 │       ├── workflow.go            # 内置 BrokerMessageWorkflow
 │       ├── options.go             # 配置选项
 │       ├── logger.go
+│       └── go.mod
+│
+├── encoding/                      # 编解码接口与插件
+│   ├── encoding.go                # Codec 接口定义 + 注册表
+│   ├── go.mod
+│   ├── json/                      # JSON 编解码器（encoding/json）
+│   │   ├── json.go
+│   │   └── go.mod
+│   ├── proto/                     # Protobuf 编解码器（google.golang.org/protobuf）
+│   │   ├── proto.go
+│   │   └── go.mod
+│   └── yaml/                      # YAML 编解码器（gopkg.in/yaml.v3）
+│       ├── yaml.go
+│       └── go.mod
+│
+├── oss/                           # 对象存储插件（独立自持配置）
+│   ├── minio/                     # MinIO（minio/minio-go）
+│   │   ├── client.go              # 返回 *minio.Client
+│   │   ├── config.go              # 本地 Config 类型
+│   │   └── go.mod
+│   └── s3/                        # AWS S3 兼容（aws-sdk-go-v2）
+│       ├── client.go              # 返回 *s3.Client
+│       ├── storage.go             # Storage 封装（默认 bucket）
+│       ├── config.go              # 本地 Config 类型
+│       ├── errors.go              # 哨兵错误
 │       └── go.mod
 │
 ├── go.work                         # Go Workspace 多模块管理

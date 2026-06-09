@@ -13,6 +13,14 @@ use (
 	./ai/eino
 	./ai/langchaingo
 	./ai/openai
+	./cache
+	./cache/local
+	./cache/redis
+	./circuitbreaker
+	./circuitbreaker/hystrix
+	./circuitbreaker/sentinel
+	./circuitbreaker/sres
+	./circuitbreaker/vegas
 	./config
 	./config/apollo
 	./config/consul
@@ -20,6 +28,14 @@ use (
 	./config/kubernetes
 	./config/nacos
 	./config/polaris
+	./encoding
+	./encoding/json
+	./encoding/proto
+	./encoding/gob
+	./encoding/msgpack
+	./encoding/toml
+	./encoding/xml
+	./encoding/yaml
 	./log
 	./log/aliyun
 	./log/fluent
@@ -31,6 +47,12 @@ use (
 	./metrics/datadog
 	./metrics/otel
 	./metrics/prometheus
+	./oss/minio
+	./oss/s3
+	./ratelimit
+	./ratelimit/bbr
+	./ratelimit/sentinel
+	./ratelimit/tokenbucket
 	./registry
 	./registry/consul
 	./registry/etcd
@@ -42,7 +64,8 @@ use (
 	./registry/zookeeper
 	./tracer
 	./tracer/otlp
-	./transport/grpc
+	./transport/grpc/client
+	./transport/grpc/server
 	./transport/http
 	./transport/http/gin
 	./transport/http/fiber

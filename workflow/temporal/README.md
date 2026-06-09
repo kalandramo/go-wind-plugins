@@ -41,6 +41,9 @@ if err != nil {
     log.Fatal(err)
 }
 defer func() { _ = wc.Close() }()
+
+// 可选：启用 OpenTelemetry 链路追踪
+wc.WithTracing()
 ```
 
 ### 执行工作流（异步）
@@ -75,6 +78,14 @@ if err != nil {
     log.Fatal(err)
 }
 // ww.Stop() 停止 Worker
+
+// StartSimpleWorker 还支持传入额外的 WorkerOptions 函数选项：
+ww2, err := wc.StartSimpleWorker(ctx, "another-queue",
+    handler,
+    func(o *temporal.WorkerOptions) {
+        o.Workflows = []any{MyCustomWorkflow}
+    },
+)
 ```
 
 ### 启动 Worker（高级模式 — 自定义 Workflow/Activity）
@@ -144,6 +155,8 @@ err = wc.Cancel(ctx, "order-12345", "")
 
 | 方法 | 说明 |
 |------|------|
+| `NewClient(opts...)` | 创建客户端连接 Temporal 服务器 |
+| `WithTracing()` | 启用 OpenTelemetry 链路追踪（Producer/Consumer Span） |
 | `Execute(ctx, args, opts)` | 异步启动工作流，返回 RunID |
 | `ExecuteSync(ctx, args, opts)` | 同步执行工作流，阻塞等待结果 |
 | `Signal(ctx, workflowID, runID, signal, arg)` | 发送 Signal |
@@ -152,7 +165,8 @@ err = wc.Cancel(ctx, "order-12345", "")
 | `Describe(ctx, workflowID, runID)` | 获取工作流描述信息 |
 | `TemporalClient()` | 获取底层 SDK Client |
 | `NewWorker(opts)` | 创建 Worker |
-| `StartSimpleWorker(ctx, taskQueue, handler)` | 最简 Worker |
+| `StartSimpleWorker(ctx, taskQueue, handler, opts...)` | 最简 Worker，支持额外 WorkerOptions |
+| `Close()` | 关闭客户端连接 |
 
 ### WorkflowWorker 方法
 
@@ -160,8 +174,10 @@ err = wc.Cancel(ctx, "order-12345", "")
 |------|------|
 | `Start()` | 启动 Worker |
 | `Stop()` | 停止 Worker |
-| `RegisterWorkflow(fn)` | 注册 Workflow |
-| `RegisterActivity(fn)` | 注册 Activity |
+| `RegisterWorkflow(fn)` | 注册 Workflow（须在 Start 前调用） |
+| `RegisterActivity(fn)` | 注册 Activity（须在 Start 前调用） |
+| `TaskQueue()` | 获取 Worker 监听的任务队列名 |
+| `IsRunning()` | 检查 Worker 是否仍在运行 |
 
 ## 配置选项
 
@@ -171,6 +187,7 @@ err = wc.Cancel(ctx, "order-12345", "")
 |------|------|------|
 | `HostPort` | `string` | Temporal 服务器地址（默认 `localhost:7233`） |
 | `Namespace` | `string` | 命名空间（默认 `default`） |
+| `Context` | `context.Context` | 传递额外上下文值 |
 
 ### ExecuteOptions
 
@@ -178,10 +195,32 @@ err = wc.Cancel(ctx, "order-12345", "")
 |------|------|------|
 | `TaskQueue` | `string` | 任务队列名 |
 | `WorkflowID` | `string` | 工作流唯一 ID |
-| `WorkflowFn` | `any` | 自定义 Workflow 函数 |
+| `WorkflowFn` | `any` | 自定义 Workflow 函数（默认 `BrokerMessageWorkflow`） |
 | `RunTimeout` | `time.Duration` | 单次运行超时 |
 | `ExecutionTimeout` | `time.Duration` | 总执行超时（含重试） |
 | `TaskTimeout` | `time.Duration` | 单个任务超时 |
 | `RetryPolicy` | `*temporal.RetryPolicy` | 重试策略 |
 | `CronSchedule` | `string` | Cron 定时表达式 |
 | `IDReusePolicy` | `WorkflowIdReusePolicy` | ID 复用策略 |
+| `Context` | `context.Context` | 传递额外上下文值 |
+
+### WorkerOptions
+
+| 选项 | 类型 | 说明 |
+|------|------|------|
+| `TaskQueue` | `string` | Worker 监听的任务队列 |
+| `Options` | `worker.Options` | 原生 Temporal Worker 选项 |
+| `Workflows` | `[]any` | 额外注册的 Workflow 函数列表 |
+| `Activities` | `[]any` | 额外注册的 Activity 函数/结构体列表 |
+| `Context` | `context.Context` | 传递额外上下文值 |
+
+## OpenTelemetry 链路追踪
+
+调用 `WithTracing()` 后，模块会自动为以下操作创建 Span：
+
+| 操作 | Span 名称 | Span Kind |
+|------|-----------|-----------|
+| `Execute` / `ExecuteSync` | `temporal-producer` | Producer |
+| `ProcessMessage` Activity | `temporal-consumer` | Consumer |
+
+Span 属性包含 `messaging.system=temporal` 和 `messaging.destination=<taskQueue>`。

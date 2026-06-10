@@ -130,6 +130,9 @@ use (
 	./transport/grpc/middleware/validate
 	./transport/grpc/server
 	./transport/graphql
+	./transport/sse
+	./transport/thrift
+	./transport/websocket
 	./transport/http
 	./transport/http/driver/chi
 	./transport/http/driver/fiber

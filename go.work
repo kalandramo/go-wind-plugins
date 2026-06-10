@@ -81,6 +81,7 @@ use (
 	./security/authn/presharedkey
 	./security/authn/session
 	./security/authz
+	./security/crypto
 	./security/authz/acl
 	./security/authz/awsiam
 	./security/authz/casbin

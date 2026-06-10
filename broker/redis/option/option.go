@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/tx7do/go-wind-plugins/broker"
-	"log/slog"
 )
 
 type OptionsKeyType struct{}
@@ -28,8 +27,8 @@ const (
 	DefaultHealthCheckPeriod = time.Minute
 
 	// Stream 默认配置
-	DefaultStreamGroup     = "kratos-group"
-	DefaultStreamConsumer  = "kratos-consumer"
+	DefaultStreamGroup     = "wind-group"
+	DefaultStreamConsumer  = "wind-consumer"
 	DefaultStreamBlockTime = 5 * time.Second
 	DefaultStreamCount     = 10
 	DefaultStreamMaxLen    = 0

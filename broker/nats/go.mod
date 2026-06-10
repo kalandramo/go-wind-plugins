@@ -13,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tx7do/go-wind v0.0.1
 	github.com/tx7do/go-wind-plugins/broker v1.3.3
+	github.com/tx7do/go-wind-plugins/encoding/proto v0.0.1
 	github.com/tx7do/go-wind-plugins/testing v1.1.2
 	github.com/tx7do/go-wind-plugins/tracer/otlp v1.1.2
 	go.opentelemetry.io/otel v1.43.0
@@ -33,11 +34,11 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1 // indirect
+	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.43.0 // indirect
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect

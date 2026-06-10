@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var clientIdPrefix = "kratos_server_"
+var clientIdPrefix = "wind_server_"
 
 // setAddrs set the mqtt server address
 func setAddrs(addrs []string) []string {

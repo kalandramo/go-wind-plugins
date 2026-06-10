@@ -109,12 +109,12 @@ func WithErrorLogger(l kafkaGo.Logger) broker.Option {
 	return broker.OptionContextWithValue(errorLoggerKey{}, l)
 }
 
-// WithEnableLogger enable kratos info logger
+// WithEnableLogger enable info logger
 func WithEnableLogger(enable bool) broker.Option {
 	return broker.OptionContextWithValue(enableLoggerKey{}, enable)
 }
 
-// WithEnableErrorLogger enable kratos error logger
+// WithEnableErrorLogger enable error logger
 func WithEnableErrorLogger(enable bool) broker.Option {
 	return broker.OptionContextWithValue(enableErrorLoggerKey{}, enable)
 }

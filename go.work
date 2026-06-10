@@ -80,8 +80,13 @@ use (
 	./security/authn/presharedkey
 	./security/authn/session
 	./security/authz
+	./security/authz/acl
+	./security/authz/awsiam
 	./security/authz/casbin
+	./security/authz/cedar
+	./security/authz/cerbos
 	./security/authz/opa
+	./security/authz/rbac
 	./security/authz/zanzibar
 	./oss/minio
 	./oss/s3

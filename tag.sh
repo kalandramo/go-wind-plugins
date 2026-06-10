@@ -144,7 +144,6 @@ git tag security/authz/zanzibar/v0.0.1 --force
 git tag security/crypto/v0.0.1 --force
 
 # tracer
-git tag tracer/v0.0.1 --force
 git tag tracer/otlp/v0.0.1 --force
 
 # testing

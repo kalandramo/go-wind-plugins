@@ -5,6 +5,7 @@ go 1.26.3
 require (
 	github.com/antihax/optional v1.0.0
 	github.com/conductor-sdk/conductor-go v1.9.0
+	github.com/tx7do/go-wind v0.0.1
 )
 
 require (

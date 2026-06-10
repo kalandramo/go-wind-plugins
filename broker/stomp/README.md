@@ -146,3 +146,7 @@ docker run -d \
 * 默认账号名密码：admin/admin
 
 ## 参考资料
+
+- [STOMP 协议规范 1.2](https://stomp.github.io/stomp-specification-1.2.html)
+- [go-stomp 客户端库](https://github.com/go-stomp/stomp)
+- [Apache ActiveMQ 官网](https://activemq.apache.org/)

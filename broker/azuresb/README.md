@@ -2,7 +2,25 @@
 
 ## 什么是 Azure Service Bus？
 
-Microsoft Azure Service Bus 是一个企业级消息代理，支持队列、主题/订阅模型，提供消息会话、事务、重复消息检测等高级特性。
+Microsoft Azure Service Bus 是一个企业级全托管消息代理，支持队列、主题/订阅模型，提供消息会话、事务、重复消息检测等高级特性。
+
+## 核心概念
+
+- **Queue**：点对点消息队列，一条消息被一个消费者消费。
+- **Topic**：发布/订阅模型的消息路由器，一条消息可被多个订阅者消费。
+- **Subscription**：Topic 下的虚拟队列，每个 Subscription 独立接收 Topic 消息。
+- **Session**：消息会话，保证同一 Session ID 的消息按序投递。
+- **Dead-letter Queue (DLQ)**：死信队列，存储无法投递或过期的消息。
+- **Scheduled Messages**：定时消息，支持延迟投递。
+- **Transaction**：事务支持，可将多个发送操作原子化。
+
+## 队列 vs 主题
+
+| 特性 | Queue | Topic + Subscription |
+|------|-------|---------------------|
+| 消费模型 | 竞争消费（一条消息只给一个消费者） | 发布/订阅（一条消息给所有订阅者） |
+| 路由规则 | 无 | 支持过滤规则（SQL/Correlation） |
+| 适用场景 | 任务队列、命令分发 | 事件通知、数据广播 |
 
 ## 使用方式
 
@@ -82,3 +100,16 @@ docker run -d \
     -e ACCEPT_EULA=Y \
     mcr.microsoft.com/azure-messaging-servicebus-emulator:latest
 ```
+
+## 注意事项
+
+- 需要在 Azure Portal 创建 Service Bus 命名空间
+- 消息最大 256KB（标准层）或 100MB（高级层）
+- 使用 Session 的 Queue/Topic 需要在创建时启用 Session 支持
+- `ReceiveMode` 默认为 `PeekLock`（需要手动 ACK），`ReceiveAndDelete` 模式消息自动删除
+
+## 参考资料
+
+- [Azure Service Bus 官方文档](https://learn.microsoft.com/azure/service-bus-messaging/)
+- [Azure Service Bus Go SDK](https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/messaging/azservicebus)
+- [Service Bus 模拟器](https://learn.microsoft.com/azure/service-bus-messaging/test-locally-with-service-bus-emulator)

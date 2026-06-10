@@ -2,7 +2,26 @@
 
 ## 什么是 AWS SQS？
 
-Amazon Simple Queue Service (SQS) 是一种完全托管的消息队列服务，支持标准队列和 FIFO 队列，提供高可扩展性和可靠性的消息传递。
+Amazon Simple Queue Service (SQS) 是一种完全托管的消息队列服务，支持标准队列和 FIFO 队列，提供高可扩展性和可靠性的消息传递。无需自行部署和维护消息中间件，AWS 全托管。
+
+## 队列类型对比
+
+| 特性 | 标准队列 | FIFO 队列 |
+|------|----------|----------|
+| 消息顺序 | 尽力排序（最佳努力） | 严格先进先出 |
+| 投递语义 | 至少一次投递（可能有重复） | 精确一次投递（不重复） |
+| 吞吐量 | 几乎无限 | 300 TPS/队列，3000 TPS/消息组 |
+| 队列名称 | 任意名称 | 必须以 `.fifo` 结尾 |
+| 适用场景 | 高吞吐、可容忍少量重复的场景 | 订单处理、金融交易等严格要求顺序和去重的场景 |
+
+## 基本概念
+
+- **Queue**：消息队列，存储消息的缓冲区。生产者发送消息到队列，消费者从队列接收消息。
+- **Message**：消息体，最大 256KB（文本）或使用 S3 扩展大消息。
+- **Visibility Timeout**：消息被消费者接收后对其他消费者隐藏的时间窗口，防止重复消费。
+- **Dead Letter Queue (DLQ)**：死信队列，接收超过最大接收次数的消息，用于异常处理。
+- **Long Polling**：`WaitTimeSeconds` 控制长轮询等待时间，减少空响应和 API 调用。
+- **Delay Queue**：队列级别的延迟投递（0-15 分钟）。
 
 ## 使用方式
 
@@ -89,4 +108,16 @@ docker run -d \
     softwaremill/elasticmq-native
 ```
 
-管理后台: <http://localhost:9325>
+## 注意事项
+
+- 标准队列不保证消息顺序，也可能会重复投递
+- FIFO 队列名称必须以 `.fifo` 结尾
+- 消息体最大 256KB，超过需配合 S3 使用
+- `Visibility Timeout` 期间消息对其他消费者不可见
+- 本地开发推荐使用 [ElasticMQ](https://github.com/softwaremill/elasticmq) 或 [LocalStack](https://localstack.cloud/)
+
+## 参考资料
+
+- [AWS SQS 官方文档](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html)
+- [AWS SDK for Go v2](https://aws.github.io/aws-sdk-go-v2/)
+- [ElasticMQ — SQS 兼容的本地模拟器](https://github.com/softwaremill/elasticmq)

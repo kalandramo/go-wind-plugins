@@ -321,3 +321,7 @@ rabbitmq-plugins enable rabbitmq_auth_backend_http
 默认密码: bitnami
 
 ## 参考资料
+
+- [RabbitMQ 官方文档](https://www.rabbitmq.com/documentation.html)
+- [AMQP 0-9-1 协议规范](https://www.rabbitmq.com/resources/specs/amqp0-9-1.pdf)
+- [rabbitmq/amqp091-go 客户端库](https://github.com/rabbitmq/amqp091-go)

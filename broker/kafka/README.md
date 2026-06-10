@@ -49,6 +49,13 @@ docker run -itd \
 
 ## 使用方式
 
+```go
+import (
+    "github.com/tx7do/go-wind-plugins/broker"
+    kafkaBroker "github.com/tx7do/go-wind-plugins/broker/kafka"
+)
+```
+
 ### 基础：发布/订阅
 
 ```go

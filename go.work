@@ -129,6 +129,7 @@ use (
 	./transport/grpc/middleware/tracing
 	./transport/grpc/middleware/validate
 	./transport/grpc/server
+	./transport/graphql
 	./transport/http
 	./transport/http/driver/chi
 	./transport/http/driver/fiber

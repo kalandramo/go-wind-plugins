@@ -43,6 +43,14 @@ type options struct {
 	// skipMethods is a set of full method names (e.g. "/grpc.health.v1.Health/Check")
 	// that should bypass authentication. Useful for health checks.
 	skipMethods map[string]bool
+
+	// --- client-side options ---
+
+	// tokenProvider supplies the token for outgoing RPCs (client-side only).
+	tokenProvider TokenProvider
+
+	// scheme is the authorization scheme (e.g. "Bearer"). Default: "Bearer".
+	scheme string
 }
 
 // WithErrorFunc sets a custom error transformer for authentication failures.

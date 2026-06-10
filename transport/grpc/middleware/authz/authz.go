@@ -78,6 +78,14 @@ type options struct {
 
 	// streamResourceResolver is the streaming counterpart of resourceResolver.
 	streamResourceResolver StreamResolverFunc
+
+	// --- client-side options ---
+
+	// clientActionResolver maps a method string to an action (client-side).
+	clientActionResolver ClientResolverFunc
+
+	// clientResourceResolver maps a method string to a resource (client-side).
+	clientResourceResolver ClientResolverFunc
 }
 
 // WithActionResolver sets a custom function to derive the authorization

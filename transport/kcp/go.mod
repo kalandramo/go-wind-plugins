@@ -23,7 +23,7 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/tx7do/go-utils v1.1.40 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 )

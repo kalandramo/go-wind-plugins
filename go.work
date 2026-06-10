@@ -106,7 +106,6 @@ use (
 	./registry/polaris
 	./registry/servicecomb
 	./registry/zookeeper
-	./tracer
 	./tracer/otlp
 	./transport/grpc/client
 	./transport/grpc/middleware/authn

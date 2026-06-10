@@ -38,7 +38,6 @@ use (
 	./config/zookeeper
 	./encoding
 	./encoding/avro
-
 	./encoding/bson
 	./encoding/cbor
 	./encoding/flatbuffers

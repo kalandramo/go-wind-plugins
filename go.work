@@ -121,6 +121,7 @@ use (
 	./registry/zookeeper
 	./tracer/otlp
 	./testing
+	./transport
 	./transport/grpc/client
 	./transport/grpc/middleware/authn
 	./transport/grpc/middleware/authz
@@ -139,14 +140,26 @@ use (
 	./transport/grpc/middleware/tracing
 	./transport/grpc/middleware/validate
 	./transport/grpc/server
+	./transport/activemq
 	./transport/asynq
+	./transport/azuresb
 	./transport/cron
+	./transport/gcpubsub
 	./transport/graphql
 	./transport/hptimer
+	./transport/kafka
 	./transport/kcp
+	./transport/mqtt
+	./transport/nats
+	./transport/nsq
+	./transport/pulsar
+	./transport/rabbitmq
+	./transport/redis
+	./transport/rocketmq
 	./transport/sse
 	./transport/signalr
 	./transport/socketio
+	./transport/sqs
 	./transport/tcp
 	./transport/thrift
 	./transport/websocket

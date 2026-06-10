@@ -6,7 +6,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tx7do/go-wind-plugins/errors v0.0.0
+	github.com/tx7do/go-wind-plugins/errors v0.0.1
 )
 
 replace github.com/tx7do/go-wind-plugins/errors => ../../errors

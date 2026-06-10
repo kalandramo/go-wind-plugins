@@ -3,11 +3,13 @@ module github.com/tx7do/go-wind-plugins/examples
 go 1.26.3
 
 require (
+	github.com/googollee/go-socket.io v1.7.0
 	github.com/tx7do/go-utils/crypto v0.0.2
 	github.com/tx7do/go-wind v0.0.1
 	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1
 	github.com/tx7do/go-wind-plugins/encoding/xml v0.0.0
 	github.com/tx7do/go-wind-plugins/registry/etcd v0.0.0
+	github.com/tx7do/go-wind-plugins/transport/cron v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/grpc/middleware/logging v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/grpc/middleware/recovery v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/grpc/server v0.0.0
@@ -18,26 +20,42 @@ require (
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/logging v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/recovery v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/requestid v0.0.0
+	github.com/tx7do/go-wind-plugins/transport/socketio v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/sse v0.0.0
+	github.com/tx7do/go-wind-plugins/transport/tcp v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/websocket v0.0.0
 	go.etcd.io/etcd/client/v3 v3.6.10
 	google.golang.org/grpc v1.80.0
 )
 
 require (
+	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
+	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/gomodule/redigo v1.9.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/handlers v1.5.2 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
+	github.com/lithammer/shortuuid/v4 v4.2.0 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
+	github.com/rs/xid v1.6.0 // indirect
+	github.com/segmentio/ksuid v1.0.4 // indirect
+	github.com/sony/sonyflake v1.3.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
+	github.com/tx7do/go-utils v1.1.40 // indirect
+	github.com/tx7do/go-utils/id v0.0.6 // indirect
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/registry v0.0.0-00010101000000-000000000000 // indirect
 	github.com/tx7do/go-wind-plugins/security/crypto v0.0.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.10 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.10 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
@@ -50,13 +68,13 @@ require (
 )
 
 replace (
-
 	github.com/tx7do/go-wind-plugins/encoding => ../encoding
 	github.com/tx7do/go-wind-plugins/encoding/json => ../encoding/json
 	github.com/tx7do/go-wind-plugins/encoding/xml => ../encoding/xml
 	github.com/tx7do/go-wind-plugins/registry => ../registry
 	github.com/tx7do/go-wind-plugins/registry/etcd => ../registry/etcd
 	github.com/tx7do/go-wind-plugins/security/crypto => ../security/crypto
+	github.com/tx7do/go-wind-plugins/transport/cron => ../transport/cron
 	github.com/tx7do/go-wind-plugins/transport/grpc/middleware/logging => ../transport/grpc/middleware/logging
 	github.com/tx7do/go-wind-plugins/transport/grpc/middleware/recovery => ../transport/grpc/middleware/recovery
 	github.com/tx7do/go-wind-plugins/transport/grpc/server => ../transport/grpc/server
@@ -67,7 +85,9 @@ replace (
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/logging => ../transport/http/middleware/logging
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/recovery => ../transport/http/middleware/recovery
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/requestid => ../transport/http/middleware/requestid
+	github.com/tx7do/go-wind-plugins/transport/socketio => ../transport/socketio
 	github.com/tx7do/go-wind-plugins/transport/sse => ../transport/sse
+	github.com/tx7do/go-wind-plugins/transport/tcp => ../transport/tcp
 	github.com/tx7do/go-wind-plugins/transport/websocket => ../transport/websocket
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d
 )

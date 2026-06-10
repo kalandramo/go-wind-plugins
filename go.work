@@ -127,8 +127,15 @@ use (
 	./transport/grpc/middleware/tracing
 	./transport/grpc/middleware/validate
 	./transport/grpc/server
+	./transport/asynq
+	./transport/cron
 	./transport/graphql
+	./transport/hptimer
+	./transport/kcp
 	./transport/sse
+	./transport/signalr
+	./transport/socketio
+	./transport/tcp
 	./transport/thrift
 	./transport/websocket
 	./transport/http

@@ -3,7 +3,7 @@ module github.com/tx7do/go-wind-plugins/ai/eino
 go 1.26.3
 
 require (
-	github.com/cloudwego/eino v0.8.11
+	github.com/cloudwego/eino v0.9.0-alpha.13
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.13
 	github.com/eino-contrib/jsonschema v1.0.3
 )

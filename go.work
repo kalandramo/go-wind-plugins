@@ -111,6 +111,7 @@ use (
 	./transport/http/fiber
 	./transport/http/gin
 	./transport/http/middleware/authn
+	./transport/http/middleware/authz
 	./transport/http/middleware/logging
 	./transport/http/middleware/recovery
 	./transport/http/middleware/tracing

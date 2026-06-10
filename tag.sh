@@ -3,6 +3,21 @@ git tag ai/eino/v0.0.1 --force
 git tag ai/langchaingo/v0.0.1 --force
 git tag ai/openai/v0.0.1 --force
 
+# broker
+git tag broker/v0.0.1 --force
+git tag broker/azuresb/v0.0.1 --force
+git tag broker/gcpubsub/v0.0.1 --force
+git tag broker/kafka/v0.0.1 --force
+git tag broker/mqtt/v0.0.1 --force
+git tag broker/nats/v0.0.1 --force
+git tag broker/nsq/v0.0.1 --force
+git tag broker/pulsar/v0.0.1 --force
+git tag broker/rabbitmq/v0.0.1 --force
+git tag broker/redis/v0.0.1 --force
+git tag broker/rocketmq/v0.0.1 --force
+git tag broker/sqs/v0.0.1 --force
+git tag broker/stomp/v0.0.1 --force
+
 # cache
 git tag cache/v0.0.1 --force
 git tag cache/local/v0.0.1 --force
@@ -131,6 +146,9 @@ git tag security/crypto/v0.0.1 --force
 # tracer
 git tag tracer/v0.0.1 --force
 git tag tracer/otlp/v0.0.1 --force
+
+# testing
+git tag testing/v0.0.1 --force
 
 # transport
 git tag transport/asynq/v0.0.1 --force

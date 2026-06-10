@@ -13,6 +13,19 @@ use (
 	./ai/eino
 	./ai/langchaingo
 	./ai/openai
+	./broker
+	./broker/azuresb
+	./broker/gcpubsub
+	./broker/kafka
+	./broker/mqtt
+	./broker/nats
+	./broker/nsq
+	./broker/pulsar
+	./broker/rabbitmq
+	./broker/redis
+	./broker/rocketmq
+	./broker/sqs
+	./broker/stomp
 	./cache
 	./cache/local
 	./cache/redis
@@ -107,6 +120,7 @@ use (
 	./registry/servicecomb
 	./registry/zookeeper
 	./tracer/otlp
+	./testing
 	./transport/grpc/client
 	./transport/grpc/middleware/authn
 	./transport/grpc/middleware/authz

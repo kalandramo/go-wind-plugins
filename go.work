@@ -130,8 +130,9 @@ use (
 	./transport/grpc/middleware/validate
 	./transport/grpc/server
 	./transport/http
-	./transport/http/fiber
-	./transport/http/gin
+	./transport/http/driver/chi
+	./transport/http/driver/fiber
+	./transport/http/driver/gin
 	./transport/http/middleware/authn
 	./transport/http/middleware/authz
 	./transport/http/middleware/circuitbreaker
@@ -149,6 +150,7 @@ use (
 	./transport/http/middleware/requestid
 	./transport/http/middleware/timeout
 	./transport/http/middleware/validate
+	./transport/http/driver/std
 	./workflow
 	./workflow/argo
 	./workflow/conductor

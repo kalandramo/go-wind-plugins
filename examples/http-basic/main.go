@@ -21,11 +21,12 @@ import (
 	"syscall"
 
 	httpServer "github.com/tx7do/go-wind-plugins/transport/http"
+	"github.com/tx7do/go-wind-plugins/transport/http/driver/std"
 )
 
 func main() {
 	// Create an HTTP server listening on :8080.
-	srv := httpServer.NewServer(":8080")
+	srv := httpServer.NewServer(":8080", httpServer.WithDriver(std.NewDriver()))
 
 	// Register a simple route.
 	srv.GET("/hello", func(w http.ResponseWriter, r *http.Request) {

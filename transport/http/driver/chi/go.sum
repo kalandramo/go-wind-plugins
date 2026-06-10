@@ -1,0 +1,4 @@
+github.com/go-chi/chi/v5 v5.2.5 h1:Eg4myHZBjyvJmAFjFvWgrqDTXFyOzjj7YIm3L3mu6Ug=
+github.com/go-chi/chi/v5 v5.2.5/go.mod h1:X7Gx4mteadT3eDOMTsXzmI4/rwUpOwBHLpAfupzFJP0=
+github.com/tx7do/go-wind v0.0.1 h1:D7UdMqCQPNWDwoC2PFFWV87y0n4apxZ3Zg+2mHrulL0=
+github.com/tx7do/go-wind v0.0.1/go.mod h1:hV4pLNXbNZThZf44JqG73xhDEmkujyN5VM1oX56c+ig=

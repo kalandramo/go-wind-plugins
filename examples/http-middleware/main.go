@@ -24,6 +24,7 @@ import (
 	_ "github.com/tx7do/go-wind-plugins/encoding/json" // side-effect: register JSON codec
 	_ "github.com/tx7do/go-wind-plugins/encoding/xml"  // side-effect: register XML codec
 	httpServer "github.com/tx7do/go-wind-plugins/transport/http"
+	"github.com/tx7do/go-wind-plugins/transport/http/driver/std"
 	"github.com/tx7do/go-wind-plugins/transport/http/middleware/codec"
 	"github.com/tx7do/go-wind-plugins/transport/http/middleware/logging"
 	"github.com/tx7do/go-wind-plugins/transport/http/middleware/recovery"
@@ -40,7 +41,7 @@ type greetResponse struct {
 }
 
 func main() {
-	srv := httpServer.NewServer(":8080")
+	srv := httpServer.NewServer(":8080", httpServer.WithDriver(std.NewDriver()))
 
 	// Middleware chain — order matters!
 	// recovery must be outermost to catch panics from everything below.

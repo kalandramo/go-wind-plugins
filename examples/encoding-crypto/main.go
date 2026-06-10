@@ -33,6 +33,7 @@ import (
 	utilsCrypto "github.com/tx7do/go-utils/crypto"
 	_ "github.com/tx7do/go-wind-plugins/encoding/json" // side-effect: register JSON codec
 	httpServer "github.com/tx7do/go-wind-plugins/transport/http"
+	"github.com/tx7do/go-wind-plugins/transport/http/driver/std"
 	"github.com/tx7do/go-wind-plugins/transport/http/middleware/codec"
 	httpCrypto "github.com/tx7do/go-wind-plugins/transport/http/middleware/crypto"
 	"github.com/tx7do/go-wind-plugins/transport/http/middleware/recovery"
@@ -51,7 +52,7 @@ func main() {
 	aesKey := []byte("1234567890abcdef")
 	cipher := utilsCrypto.NewAESCipher(aesKey, nil)
 
-	srv := httpServer.NewServer(":8080")
+	srv := httpServer.NewServer(":8080", httpServer.WithDriver(std.NewDriver()))
 
 	// Middleware order: crypto BEFORE codec.
 	//   crypto decrypts the body first, then codec parses the plaintext.

@@ -10,6 +10,7 @@ require (
 	github.com/tx7do/go-wind-plugins/transport/grpc/middleware/recovery v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/grpc/server v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/http v0.0.0
+	github.com/tx7do/go-wind-plugins/transport/http/driver/std v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/codec v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/crypto v0.0.0
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/logging v0.0.0
@@ -39,6 +40,7 @@ replace (
 	github.com/tx7do/go-wind-plugins/transport/grpc/middleware/recovery => ../transport/grpc/middleware/recovery
 	github.com/tx7do/go-wind-plugins/transport/grpc/server => ../transport/grpc/server
 	github.com/tx7do/go-wind-plugins/transport/http => ../transport/http
+	github.com/tx7do/go-wind-plugins/transport/http/driver/std => ../transport/http/driver/std
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/codec => ../transport/http/middleware/codec
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/crypto => ../transport/http/middleware/crypto
 	github.com/tx7do/go-wind-plugins/transport/http/middleware/logging => ../transport/http/middleware/logging

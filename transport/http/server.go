@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net"
 	"net/http"
 
@@ -51,8 +52,9 @@ func (s *Server) Use(middlewares ...Middleware) {
 
 // Handle 注册路由处理器，将请求转发到具体的驱动实现。
 // 注册前会应用已添加的中间件链。
+// 若未通过 WithDriver 设置驱动，将 panic。
 func (s *Server) Handle(method, path string, handler http.HandlerFunc) {
-	s.ensureDriver()
+	s.mustDriver()
 	s.driver.Handle(method, path, s.wrapHandler(handler))
 }
 
@@ -93,8 +95,9 @@ func (s *Server) OPTIONS(path string, handler http.HandlerFunc) {
 
 // Start 启动 HTTP 服务器。
 // Server 自行创建 net.Listener 以获取实际绑定地址，并用 TLS 包装（若已配置）。
+// 若未通过 WithDriver 设置驱动，将返回错误。
 func (s *Server) Start(ctx context.Context) error {
-	s.ensureDriver()
+	s.mustDriver()
 
 	ln, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -167,9 +170,12 @@ func Chain(middlewares ...Middleware) Middleware {
 	}
 }
 
-// ensureDriver 确保驱动已初始化，未设置时使用默认驱动。
-func (s *Server) ensureDriver() {
+// ErrNoDriver 表示未设置 HTTP 服务器驱动。
+var ErrNoDriver = errors.New("http: no driver set, use WithDriver() to specify one (e.g. std.NewDriver(), gin.NewDriver())")
+
+// mustDriver 确保驱动已设置，未设置时 panic。
+func (s *Server) mustDriver() {
 	if s.driver == nil {
-		s.driver = NewDefaultDriver()
+		panic(ErrNoDriver)
 	}
 }

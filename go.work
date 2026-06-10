@@ -38,6 +38,9 @@ use (
 	./config/zookeeper
 	./encoding
 	./encoding/avro
+
+	// --- Examples ---
+	./examples
 	./encoding/bson
 	./encoding/cbor
 	./encoding/flatbuffers

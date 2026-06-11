@@ -1,6 +1,6 @@
 module github.com/tx7do/go-wind-plugins/transport/webrtc
 
-go 1.25.0
+go 1.26.3
 
 replace (
 	github.com/tx7do/go-wind-plugins/broker => ../../broker
@@ -12,6 +12,8 @@ require (
 	github.com/pion/webrtc/v4 v4.2.12
 	github.com/tx7do/go-utils/id v0.0.6
 	github.com/tx7do/go-wind v0.0.1
+	github.com/tx7do/go-wind-plugins/broker v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-wind-plugins/encoding v0.0.1
 )
 
 require (
@@ -20,7 +22,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-playground/form/v4 v4.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/lithammer/shortuuid/v4 v4.2.0 // indirect
@@ -43,6 +44,9 @@ require (
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/sony/sonyflake v1.3.0 // indirect
 	github.com/tx7do/go-utils v1.1.40 // indirect
+	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1 // indirect
+	github.com/tx7do/go-wind-plugins/encoding/proto v0.0.1 // indirect
+	github.com/tx7do/go-wind-plugins/tracer/otlp v0.0.1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -50,7 +54,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.43.0 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.43.0 // indirect
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
@@ -64,5 +67,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/grpc v1.81.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

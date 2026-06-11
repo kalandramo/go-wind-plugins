@@ -63,9 +63,9 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/tx7do/go-utils v1.1.40 // indirect
 	github.com/tx7do/go-utils/id v0.0.6 // indirect
-	github.com/tx7do/go-wind-plugins/config v0.0.0-00010101000000-000000000000 // indirect
+	github.com/tx7do/go-wind-plugins/config v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1 // indirect
-	github.com/tx7do/go-wind-plugins/registry v0.0.0-00010101000000-000000000000 // indirect
+	github.com/tx7do/go-wind-plugins/registry v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/security/crypto v0.0.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.10 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.10 // indirect

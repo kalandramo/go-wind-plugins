@@ -4,7 +4,7 @@ go 1.26.3
 
 require (
 	github.com/hashicorp/vault/api v1.23.0
-	github.com/tx7do/go-wind-plugins/config v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-wind-plugins/config v0.0.1
 )
 
 require (

@@ -121,6 +121,9 @@ use (
 	./registry/zookeeper
 	./tracer/otlp
 	./testing
+
+	./transaction
+	./transaction/dtm
 	./transport
 	./transport/grpc/client
 	./transport/grpc/middleware/authn

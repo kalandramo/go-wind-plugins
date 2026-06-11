@@ -208,4 +208,8 @@ git tag workflow/conductor/v0.0.1 --force
 git tag workflow/goworkflows/v0.0.1 --force
 git tag workflow/temporal/v0.0.1 --force
 
+# transaction
+git tag transaction/v0.0.1 --force
+git tag transaction/dtm/v0.0.1 --force
+
 git push origin --tags

@@ -46,6 +46,7 @@ require (
 	github.com/tx7do/go-utils v1.1.40 // indirect
 	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/encoding/proto v0.0.1 // indirect
+	github.com/tx7do/go-wind-plugins/metrics v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/tracer/otlp v0.0.1 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect

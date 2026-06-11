@@ -5,6 +5,7 @@ import (
 
 	"github.com/pion/webrtc/v4"
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
 )
 
 type ClientOption func(o *Client)
@@ -62,5 +63,12 @@ func WithClientSignalTimeout(timeout time.Duration) ClientOption {
 		if timeout > 0 {
 			c.signalTimeout = timeout
 		}
+	}
+}
+
+// WithClientMetrics 注入指标监控。
+func WithClientMetrics(m metrics.Metrics) ClientOption {
+	return func(c *Client) {
+		c.m = m
 	}
 }

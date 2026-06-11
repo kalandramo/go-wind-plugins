@@ -13,6 +13,7 @@ import (
 	"github.com/quic-go/quic-go/http3"
 	"github.com/tx7do/go-wind-plugins/broker"
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
 )
 
 type ClientMessageHandler func(MessagePayload) error
@@ -36,6 +37,8 @@ type Client struct {
 
 	codec           encoding.Codec
 	messageHandlers ClientMessageHandlerMap
+
+	m metrics.Metrics
 }
 
 func NewClient(opts ...ClientOption) *Client {
@@ -123,6 +126,15 @@ func (c *Client) DeregisterMessageHandler(messageType MessageType) {
 }
 
 func (c *Client) SendMessage(messageType int, message any) error {
+	startTime := time.Now()
+	labels := map[string]string{
+		"rpc.system": "webtransport",
+	}
+
+	if c.m != nil {
+		c.m.Counter(context.Background(), "webtransport.client.messages.sent", 1, labels)
+	}
+
 	var msg Message
 	msg.Type = MessageType(messageType)
 	msg.Body, _ = broker.Marshal(c.codec, message)
@@ -133,7 +145,17 @@ func (c *Client) SendMessage(messageType int, message any) error {
 	}
 
 	if err := c.SendRawData(buff); err != nil {
+		if c.m != nil {
+			c.m.Counter(context.Background(), "webtransport.client.messages.errors", 1, map[string]string{
+				"rpc.system": "webtransport",
+				"error":      "true",
+			})
+		}
 		return err
+	}
+
+	if c.m != nil {
+		c.m.Histogram(context.Background(), "webtransport.client.message.send_duration", time.Since(startTime).Seconds(), labels)
 	}
 
 	return nil
@@ -165,6 +187,12 @@ func (c *Client) newWebTransportRequest() (*http.Request, error) {
 }
 
 func (c *Client) messageHandler(buf []byte) error {
+	if c.m != nil {
+		c.m.Counter(context.Background(), "webtransport.client.messages.received", 1, map[string]string{
+			"rpc.system": "webtransport",
+		})
+	}
+
 	var msg Message
 	if err := msg.Unmarshal(buf); err != nil {
 		LogErrorf("decode message exception: %s", err)

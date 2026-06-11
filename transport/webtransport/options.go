@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
 
 	"github.com/quic-go/quic-go"
 )
@@ -102,5 +103,12 @@ func WithClientKeepAlivePeriod(timeout time.Duration) ClientOption {
 			s.transport.QUICConfig = &quic.Config{}
 		}
 		s.transport.QUICConfig.KeepAlivePeriod = timeout
+	}
+}
+
+// WithClientMetrics 注入指标监控。
+func WithClientMetrics(m metrics.Metrics) ClientOption {
+	return func(o *Client) {
+		o.m = m
 	}
 }

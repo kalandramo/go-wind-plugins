@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net"
@@ -8,6 +9,9 @@ import (
 	"time"
 
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ClientMessageHandler func(NetMessagePayload) error
@@ -29,6 +33,9 @@ type Client struct {
 	codec             encoding.Codec
 	messageHandlers   ClientMessageHandlerMap
 	rawMessageHandler ClientRawMessageHandler
+
+	tracer trace.Tracer
+	m      metrics.Metrics
 
 	timeout time.Duration
 }
@@ -120,9 +127,29 @@ func (c *Client) SendRawData(message []byte) error {
 		return errors.New("client is not connected")
 	}
 
+	startTime := time.Now()
+	labels := map[string]string{
+		"rpc.system": "tcp",
+	}
+
+	if c.m != nil {
+		c.m.Counter(context.Background(), "tcp.client.messages.sent", 1, labels)
+	}
+
 	if _, err := c.conn.Write(message); err != nil {
+		if c.m != nil {
+			c.m.Counter(context.Background(), "tcp.client.messages.errors", 1, map[string]string{
+				"rpc.system": "tcp",
+				"error":      "true",
+			})
+		}
 		return err
 	}
+
+	if c.m != nil {
+		c.m.Histogram(context.Background(), "tcp.client.message.send_duration", time.Since(startTime).Seconds(), labels)
+	}
+
 	return nil
 }
 
@@ -165,6 +192,12 @@ func (c *Client) run() {
 
 		if err = c.messageHandler(buf[:readLen]); err != nil {
 			log.Printf("[tcp] process message error: %v", err)
+		}
+
+		if c.m != nil {
+			c.m.Counter(context.Background(), "tcp.client.messages.received", 1, map[string]string{
+				"rpc.system": "tcp",
+			})
 		}
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/tx7do/go-wind-plugins/encoding"
 
 	"github.com/tx7do/go-wind-plugins/broker"
+	"github.com/tx7do/go-wind-plugins/metrics"
 )
 
 type ClientMessageHandler func(MessagePayload) error
@@ -37,6 +38,8 @@ type Client struct {
 	webrtcConfig     webrtc.Configuration
 	connectTimeout   time.Duration
 	signalTimeout    time.Duration
+
+	m metrics.Metrics
 
 	pcMu sync.RWMutex
 	pc   *webrtc.PeerConnection
@@ -277,6 +280,15 @@ func (c *Client) Disconnect() error {
 }
 
 func (c *Client) SendMessage(messageType NetMessageType, message any) error {
+	startTime := time.Now()
+	labels := map[string]string{
+		"rpc.system": "webrtc",
+	}
+
+	if c.m != nil {
+		c.m.Counter(context.Background(), "webrtc.client.messages.sent", 1, labels)
+	}
+
 	buf, err := c.marshalMessage(messageType, message)
 	if err != nil {
 		return err
@@ -291,10 +303,26 @@ func (c *Client) SendMessage(messageType NetMessageType, message any) error {
 
 	switch c.payloadType {
 	case PayloadTypeText:
-		return dc.SendText(string(buf))
+		err = dc.SendText(string(buf))
 	default:
-		return dc.Send(buf)
+		err = dc.Send(buf)
 	}
+
+	if err != nil {
+		if c.m != nil {
+			c.m.Counter(context.Background(), "webrtc.client.messages.errors", 1, map[string]string{
+				"rpc.system": "webrtc",
+				"error":      "true",
+			})
+		}
+		return err
+	}
+
+	if c.m != nil {
+		c.m.Histogram(context.Background(), "webrtc.client.message.send_duration", time.Since(startTime).Seconds(), labels)
+	}
+
+	return nil
 }
 
 func (c *Client) marshalMessage(messageType NetMessageType, message MessagePayload) ([]byte, error) {
@@ -364,6 +392,12 @@ func (c *Client) unmarshalMessage(buf []byte) (*ClientHandlerData, MessagePayloa
 }
 
 func (c *Client) messageHandler(buf []byte) error {
+	if c.m != nil {
+		c.m.Counter(context.Background(), "webrtc.client.messages.received", 1, map[string]string{
+			"rpc.system": "webrtc",
+		})
+	}
+
 	handler, payload, err := c.unmarshalMessage(buf)
 	if err != nil {
 		return err

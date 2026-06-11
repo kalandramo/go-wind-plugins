@@ -60,10 +60,16 @@ type Server struct {
 	socketConnectHandler SocketConnectHandler
 	socketRawDataHandler SocketRawDataHandler
 
+	middlewares []Middleware
+
 	running   bool
 	stateMu   sync.RWMutex
 	handlerMu sync.RWMutex
 }
+
+// Middleware 是标准 HTTP 中间件类型。
+// 使用类型别名使得 transport/http/middleware 下的中间件可以直接复用。
+type Middleware = func(http.Handler) http.Handler
 
 func NewServer(opts ...ServerOption) *Server {
 	srv := &Server{
@@ -112,7 +118,13 @@ func (s *Server) init(opts ...ServerOption) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc(s.path, s.signalHandler)
 
-	s.Server = &http.Server{TLSConfig: s.tlsConf, Handler: mux}
+	// 应用中间件链
+	h := http.Handler(mux)
+	for i := len(s.middlewares) - 1; i >= 0; i-- {
+		h = s.middlewares[i](h)
+	}
+
+	s.Server = &http.Server{TLSConfig: s.tlsConf, Handler: h}
 
 	if s.netPacketMarshaler == nil {
 		s.netPacketMarshaler = s.defaultMarshalNetPacket
@@ -137,6 +149,13 @@ func (s *Server) init(opts ...ServerOption) error {
 
 func (s *Server) Name() string {
 	return KindWebRTC
+}
+
+// Use 注册全局标准 HTTP 中间件，对所有路由生效。
+// 支持直接使用 transport/http/middleware 下的中间件。
+// 必须在 Start 之前调用。
+func (s *Server) Use(middlewares ...Middleware) {
+	s.middlewares = append(s.middlewares, middlewares...)
 }
 
 func (s *Server) RegisterMessageHandler(messageType NetMessageType, handler NetMessageHandler, binder Creator) {

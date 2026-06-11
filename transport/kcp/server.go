@@ -17,8 +17,13 @@ import (
 	"time"
 
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
 	"github.com/tx7do/go-wind/transport"
 	"github.com/xtaci/kcp-go/v5"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // KindKcp 是 KCP 传输类型标识。
@@ -52,6 +57,9 @@ type Server struct {
 
 	netPacketMarshaler   NetPacketMarshaler
 	netPacketUnmarshaler NetPacketUnmarshaler
+
+	tracer trace.Tracer
+	m      metrics.Metrics
 }
 
 func NewServer(opts ...Option) *Server {
@@ -335,15 +343,50 @@ func (s *Server) defaultUnmarshalNetPacket(buf []byte) (handler *MessageHandlerD
 }
 
 func (s *Server) defaultHandleSocketRawData(sessionId SessionID, buf []byte) error {
+	var span trace.Span
+	var ctx context.Context
+
+	if s.tracer != nil {
+		ctx, span = s.tracer.Start(context.Background(), "kcp.message.receive",
+			trace.WithSpanKind(trace.SpanKindServer),
+			trace.WithAttributes(
+				attribute.String("rpc.system", "kcp"),
+				attribute.String("kcp.session_id", string(sessionId)),
+				attribute.Int("kcp.message_size", len(buf)),
+			),
+		)
+		defer span.End()
+	}
+
+	start := time.Now()
+
 	handler, payload, err := s.unmarshalNetPacket(buf)
 	if err != nil {
 		log.Printf("[kcp] unmarshal message failed: %s", err)
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		if s.m != nil {
+			s.m.Counter(ctx, "kcp_messages_total", 1, map[string]string{"status": "error"})
+		}
 		return err
 	}
 
 	if err = handler.Handler(sessionId, payload); err != nil {
 		log.Printf("[kcp] message handler failed: %s", err)
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		if s.m != nil {
+			s.m.Counter(ctx, "kcp_messages_total", 1, map[string]string{"status": "error"})
+		}
 		return err
+	}
+
+	if s.m != nil {
+		latency := time.Since(start).Seconds()
+		s.m.Counter(ctx, "kcp_messages_total", 1, map[string]string{"status": "ok"})
+		s.m.Histogram(ctx, "kcp_message_duration_seconds", latency, map[string]string{})
 	}
 
 	return nil
@@ -406,6 +449,9 @@ func (s *Server) OnSessionAdded(session *Session) {
 func (s *Server) OnSessionRemoved(session *Session) {
 	if s.socketConnectHandler != nil && session != nil {
 		s.socketConnectHandler(session.SessionID(), false)
+	}
+	if s.m != nil {
+		s.m.Gauge(context.Background(), "kcp_connections_in_flight", -1, map[string]string{})
 	}
 }
 

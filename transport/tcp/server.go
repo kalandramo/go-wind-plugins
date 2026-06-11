@@ -36,7 +36,12 @@ import (
 	"github.com/tx7do/go-utils/id"
 
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
 	"github.com/tx7do/go-wind/transport"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // KindTcp 是 TCP 传输类型标识。
@@ -65,6 +70,9 @@ type Server struct {
 	netPacketUnmarshaler NetPacketUnmarshaler
 
 	sessionManager *SessionManager
+
+	tracer trace.Tracer
+	m      metrics.Metrics
 
 	running   bool
 	stateMu   sync.RWMutex
@@ -335,15 +343,50 @@ func (s *Server) defaultUnmarshalNetPacket(buf []byte) (handler *MessageHandlerD
 }
 
 func (s *Server) defaultHandleSocketRawData(sessionId SessionID, buf []byte) error {
+	var span trace.Span
+	var ctx context.Context
+
+	if s.tracer != nil {
+		ctx, span = s.tracer.Start(context.Background(), "tcp.message.receive",
+			trace.WithSpanKind(trace.SpanKindServer),
+			trace.WithAttributes(
+				attribute.String("rpc.system", "tcp"),
+				attribute.String("tcp.session_id", string(sessionId)),
+				attribute.Int("tcp.message_size", len(buf)),
+			),
+		)
+		defer span.End()
+	}
+
+	start := time.Now()
+
 	handler, payload, err := s.unmarshalNetPacket(buf)
 	if err != nil {
 		log.Printf("[tcp] unmarshal message failed: %s", err)
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		if s.m != nil {
+			s.m.Counter(ctx, "tcp_messages_total", 1, map[string]string{"status": "error"})
+		}
 		return err
 	}
 
 	if err = handler.Handler(sessionId, payload); err != nil {
 		log.Printf("[tcp] message handler failed: %s", err)
+		if span != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		if s.m != nil {
+			s.m.Counter(ctx, "tcp_messages_total", 1, map[string]string{"status": "error"})
+		}
 		return err
+	}
+
+	if s.m != nil {
+		latency := time.Since(start).Seconds()
+		s.m.Counter(ctx, "tcp_messages_total", 1, map[string]string{"status": "ok"})
+		s.m.Histogram(ctx, "tcp_message_duration_seconds", latency, map[string]string{})
 	}
 
 	return nil
@@ -373,6 +416,10 @@ func (s *Server) doAccept() {
 
 			log.Printf("[tcp] accept connection failed: %s", err)
 			continue
+		}
+
+		if s.m != nil {
+			s.m.Gauge(context.Background(), "tcp_connections_in_flight", 1, map[string]string{})
 		}
 
 		session := NewSession(conn, s)
@@ -406,6 +453,9 @@ func (s *Server) OnSessionAdded(session *Session) {
 func (s *Server) OnSessionRemoved(session *Session) {
 	if s.socketConnectHandler != nil && session != nil {
 		s.socketConnectHandler(session.SessionID(), false)
+	}
+	if s.m != nil {
+		s.m.Gauge(context.Background(), "tcp_connections_in_flight", -1, map[string]string{})
 	}
 }
 

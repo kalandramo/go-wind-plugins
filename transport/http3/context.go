@@ -87,7 +87,7 @@ func (c *wrapper) Query() url.Values {
 func (c *wrapper) Request() *http.Request        { return c.req }
 func (c *wrapper) Response() http.ResponseWriter { return c.res }
 func (c *wrapper) Middleware(h Handler) Handler {
-	return Chain(c.router.srv.ms...)(h)
+	return ChainHandler(c.router.srv.hms...)(h)
 }
 func (c *wrapper) Bind(v any) error      { return c.router.srv.dec(c.req, v) }
 func (c *wrapper) BindVars(v any) error  { return BindQuery(c.Vars(), v) }

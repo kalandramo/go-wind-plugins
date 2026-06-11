@@ -32,12 +32,12 @@ type EncodeErrorFunc func(w http.ResponseWriter, req *http.Request, err error) e
 // Handler is a middleware handler function.
 type Handler func(ctx context.Context, req any) (any, error)
 
-// Middleware is a middleware function that wraps a Handler.
-type Middleware func(Handler) Handler
+// HandlerMiddleware is a middleware function that wraps a Handler.
+type HandlerMiddleware func(Handler) Handler
 
-// Chain builds a Middleware from the given middlewares.
+// ChainHandler builds a HandlerMiddleware from the given middlewares.
 // Middlewares are applied in reverse order so the first middleware is the outermost.
-func Chain(m ...Middleware) Middleware {
+func ChainHandler(m ...HandlerMiddleware) HandlerMiddleware {
 	return func(next Handler) Handler {
 		for i := len(m) - 1; i >= 0; i-- {
 			next = m[i](next)

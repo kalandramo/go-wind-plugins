@@ -45,8 +45,14 @@ type Server struct {
 	connectHandler  ConnectHandler
 	codec           encoding.Codec
 
+	middlewares []Middleware
+
 	sessionCount atomic.Int64
 }
+
+// Middleware 是标准 HTTP 中间件类型。
+// 使用类型别名使得 transport/http/middleware 下的中间件可以直接复用。
+type Middleware = func(http.Handler) http.Handler
 
 func NewServer(opts ...ServerOption) *Server {
 	ctx, ctxCancel := context.WithCancel(context.Background())
@@ -93,7 +99,13 @@ func (s *Server) init(opts ...ServerOption) {
 	s.Server.AdditionalSettings[settingsEnableWebtransport] = 1
 
 	s.mux.HandleFunc(s.path, s.addHandler)
-	s.Server.Handler = s.mux
+
+	// 应用中间件链
+	h := http.Handler(s.mux)
+	for i := len(s.middlewares) - 1; i >= 0; i-- {
+		h = s.middlewares[i](h)
+	}
+	s.Server.Handler = h
 }
 
 func (s *Server) Endpoint() string {
@@ -104,6 +116,13 @@ func (s *Server) Endpoint() string {
 		return ""
 	}
 	return s.endpoint.String()
+}
+
+// Use 注册全局标准 HTTP 中间件，对所有路由生效。
+// 支持直接使用 transport/http/middleware 下的中间件。
+// 必须在 Start 之前调用。
+func (s *Server) Use(middlewares ...Middleware) {
+	s.middlewares = append(s.middlewares, middlewares...)
 }
 
 func (s *Server) listenAndEndpoint() error {

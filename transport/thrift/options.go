@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 
 	"github.com/apache/thrift/lib/go/thrift"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Option 是 Thrift 服务器的配置选项。
@@ -37,5 +39,19 @@ func WithTransportConfig(buffered, framed bool, bufferSize int) Option {
 		s.buffered = buffered
 		s.framed = framed
 		s.bufferSize = bufferSize
+	}
+}
+
+// WithTracer 设置 OpenTelemetry tracer，启用 RPC 级别的链路追踪。
+func WithTracer(t trace.Tracer) Option {
+	return func(s *Server) {
+		s.tracer = t
+	}
+}
+
+// WithTracerProvider 从全局 TracerProvider 创建并设置 tracer。
+func WithTracerProvider() Option {
+	return func(s *Server) {
+		s.tracer = otel.GetTracerProvider().Tracer("go-wind/plugins/thrift")
 	}
 }

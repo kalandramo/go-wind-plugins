@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/tx7do/go-wind-plugins/encoding"
+	"github.com/tx7do/go-wind-plugins/metrics"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Option 是 TCP 服务器的配置选项。
@@ -69,5 +72,26 @@ func WithSocketRawDataHandler(h SocketRawDataHandler) Option {
 		if h != nil {
 			s.socketRawDataHandler = h
 		}
+	}
+}
+
+// WithTracer 设置 OpenTelemetry tracer，启用消息级别的链路追踪。
+func WithTracer(t trace.Tracer) Option {
+	return func(s *Server) {
+		s.tracer = t
+	}
+}
+
+// WithTracerProvider 从全局 TracerProvider 创建并设置 tracer。
+func WithTracerProvider() Option {
+	return func(s *Server) {
+		s.tracer = otel.GetTracerProvider().Tracer("go-wind/plugins/tcp")
+	}
+}
+
+// WithMetrics 设置 metrics 实现，启用消息级别的指标采集。
+func WithMetrics(m metrics.Metrics) Option {
+	return func(s *Server) {
+		s.m = m
 	}
 }

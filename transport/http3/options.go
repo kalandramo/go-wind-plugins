@@ -25,9 +25,9 @@ func WithTimeout(timeout time.Duration) ServerOption {
 	}
 }
 
-func WithMiddleware(m ...Middleware) ServerOption {
+func WithMiddleware(m ...HandlerMiddleware) ServerOption {
 	return func(o *Server) {
-		o.ms = m
+		o.hms = m
 	}
 }
 

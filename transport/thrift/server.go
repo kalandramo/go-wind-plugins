@@ -29,6 +29,10 @@ import (
 	"github.com/apache/thrift/lib/go/thrift"
 
 	"github.com/tx7do/go-wind/transport"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const KindThrift = "thrift"
@@ -52,6 +56,8 @@ type Server struct {
 	framed     bool
 	bufferSize int
 
+	tracer trace.Tracer
+
 	server   *thrift.TSimpleServer
 	listener net.Listener
 }
@@ -66,6 +72,15 @@ func NewServer(addr string, opts ...Option) *Server {
 	for _, opt := range opts {
 		opt(srv)
 	}
+
+	// 如果设置了 tracer，包装 processor
+	if srv.tracer != nil && srv.processor != nil {
+		srv.processor = &tracingProcessor{
+			TProcessor: srv.processor,
+			tracer:     srv.tracer,
+		}
+	}
+
 	return srv
 }
 
@@ -176,4 +191,32 @@ func createServerTransport(addr string, tlsConf *tls.Config) (thrift.TServerTran
 		return thrift.NewTSSLServerSocket(addr, tlsConf)
 	}
 	return thrift.NewTServerSocket(addr)
+}
+
+// ---------------------------------------------------------------------------
+// Tracing
+// ---------------------------------------------------------------------------
+
+// tracingProcessor 包装 thrift.TProcessor，为每个 RPC 调用创建 OTel span。
+type tracingProcessor struct {
+	thrift.TProcessor
+	tracer trace.Tracer
+}
+
+func (p *tracingProcessor) Process(ctx context.Context, in, out thrift.TProtocol) (bool, thrift.TException) {
+	ctx, span := p.tracer.Start(ctx, "thrift.rpc",
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithAttributes(
+			attribute.String("rpc.system", "thrift"),
+		),
+	)
+	defer span.End()
+
+	ok, err := p.TProcessor.Process(ctx, in, out)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+	} else if !ok {
+		span.SetStatus(codes.Error, "processing failed")
+	}
+	return ok, err
 }

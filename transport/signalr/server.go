@@ -57,8 +57,13 @@ type Server struct {
 
 	hub signalr.HubInterface
 
-	router *http.ServeMux
+	router      *http.ServeMux
+	middlewares []Middleware
 }
+
+// Middleware 是标准 HTTP 中间件类型。
+// 使用类型别名使得 transport/http/middleware 下的中间件可以直接复用。
+type Middleware = func(http.Handler) http.Handler
 
 func NewServer(opts ...Option) *Server {
 	srv := &Server{
@@ -86,7 +91,11 @@ func (s *Server) Start(ctx context.Context) error {
 
 	log.Printf("[signalr] server listening on: %s", lis.Addr().String())
 
+	// 应用中间件链
 	handler := s.CORS(s.router)
+	for i := len(s.middlewares) - 1; i >= 0; i-- {
+		handler = s.middlewares[i](handler)
+	}
 
 	go func() {
 		if s.tlsConf != nil {
@@ -137,6 +146,13 @@ func (s *Server) Endpoint() string {
 
 func (s *Server) MapHTTP(path string) {
 	s.Server.MapHTTP(signalr.WithHTTPServeMux(s.router), path)
+}
+
+// Use 注册全局标准 HTTP 中间件，对所有路由生效。
+// 支持直接使用 transport/http/middleware 下的中间件。
+// 必须在 Start 之前调用。
+func (s *Server) Use(middlewares ...Middleware) {
+	s.middlewares = append(s.middlewares, middlewares...)
 }
 
 func (s *Server) init(opts ...Option) {

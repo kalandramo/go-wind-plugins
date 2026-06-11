@@ -16,6 +16,10 @@ import (
 	"github.com/quic-go/quic-go/http3"
 )
 
+// Middleware 是标准 HTTP 中间件类型。
+// 使用类型别名使得 transport/http/middleware 下的中间件可以直接复用。
+type Middleware = func(http.Handler) http.Handler
+
 type Server struct {
 	*http3.Server
 
@@ -24,11 +28,12 @@ type Server struct {
 
 	err error
 
-	filters []FilterFunc
-	ms      []Middleware
-	dec     DecodeRequestFunc
-	enc     EncodeResponseFunc
-	ene     EncodeErrorFunc
+	filters     []FilterFunc
+	hms         []HandlerMiddleware
+	middlewares []Middleware
+	dec         DecodeRequestFunc
+	enc         EncodeResponseFunc
+	ene         EncodeErrorFunc
 
 	router      *mux.Router
 	strictSlash bool
@@ -66,7 +71,12 @@ func (s *Server) init(opts ...ServerOption) {
 	s.router.NotFoundHandler = http.DefaultServeMux
 	s.router.MethodNotAllowedHandler = http.DefaultServeMux
 
-	handler := s.filter()(s.router)
+	// 应用中间件链：先应用标准 HTTP 中间件，再应用 FilterFunc
+	h := http.Handler(s.router)
+	for i := len(s.middlewares) - 1; i >= 0; i-- {
+		h = s.middlewares[i](h)
+	}
+	handler := s.filter()(h)
 	s.Server.Handler = FilterChain(s.filters...)(handler)
 }
 
@@ -120,6 +130,17 @@ func (s *Server) HandleFunc(path string, h http.HandlerFunc) {
 
 func (s *Server) HandleHeader(key, val string, h http.HandlerFunc) {
 	s.router.Headers(key, val).Handler(h)
+}
+
+// Use 注册全局标准 HTTP 中间件，对所有路由生效。
+// 支持直接使用 transport/http/middleware 下的中间件，例如：
+//
+//	srv.Use(tracing.Middleware())
+//	srv.Use(metrics.Middleware(myMetrics))
+//
+// 必须在 Start 之前调用。
+func (s *Server) Use(middlewares ...Middleware) {
+	s.middlewares = append(s.middlewares, middlewares...)
 }
 
 func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {

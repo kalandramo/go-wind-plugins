@@ -7,14 +7,24 @@ require (
 	github.com/apache/thrift v0.23.0
 	github.com/googollee/go-socket.io v1.7.0
 	github.com/hibiken/asynq v0.26.0
+	github.com/prometheus/client_golang v1.23.2
 	github.com/tx7do/go-utils/crypto v0.0.2
 	github.com/tx7do/go-wind v0.0.1
+	github.com/tx7do/go-wind-plugins/broker v0.0.1
 	github.com/tx7do/go-wind-plugins/cache v0.0.1
 	github.com/tx7do/go-wind-plugins/cache/local v0.0.1
+	github.com/tx7do/go-wind-plugins/circuitbreaker v0.0.1
+	github.com/tx7do/go-wind-plugins/circuitbreaker/sres v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-wind-plugins/config/file v0.0.1
 	github.com/tx7do/go-wind-plugins/encoding/json v0.0.1
 	github.com/tx7do/go-wind-plugins/encoding/xml v0.0.1
+	github.com/tx7do/go-wind-plugins/health v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-wind-plugins/metrics v0.0.1
+	github.com/tx7do/go-wind-plugins/metrics/prometheus v0.0.0-00010101000000-000000000000
+	github.com/tx7do/go-wind-plugins/ratelimit v0.0.1
+	github.com/tx7do/go-wind-plugins/ratelimit/tokenbucket v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-wind-plugins/registry/etcd v0.0.1
+	github.com/tx7do/go-wind-plugins/retry v0.0.0-00010101000000-000000000000
 	github.com/tx7do/go-wind-plugins/testing v0.0.1
 	github.com/tx7do/go-wind-plugins/tracer/otlp v0.0.1
 	github.com/tx7do/go-wind-plugins/transport/asynq v0.0.1
@@ -46,6 +56,7 @@ require (
 
 require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
+	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -70,7 +81,11 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/lithammer/shortuuid/v4 v4.2.0 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
+	github.com/prometheus/common v0.67.5 // indirect
+	github.com/prometheus/procfs v0.20.1 // indirect
 	github.com/redis/go-redis/v9 v9.18.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
@@ -82,12 +97,10 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/tx7do/go-utils v1.1.40 // indirect
 	github.com/tx7do/go-utils/id v0.0.6 // indirect
-	github.com/tx7do/go-wind-plugins/broker v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/broker/kafka v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/config v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/encoding v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/encoding/proto v0.0.1 // indirect
-	github.com/tx7do/go-wind-plugins/metrics v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/registry v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/security/crypto v0.0.1 // indirect
 	github.com/tx7do/go-wind-plugins/transport v0.0.1 // indirect
@@ -108,6 +121,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
@@ -122,13 +136,21 @@ replace (
 	github.com/tx7do/go-wind-plugins/broker/kafka => ../broker/kafka
 	github.com/tx7do/go-wind-plugins/cache => ../cache
 	github.com/tx7do/go-wind-plugins/cache/local => ../cache/local
+	github.com/tx7do/go-wind-plugins/circuitbreaker => ../circuitbreaker
+	github.com/tx7do/go-wind-plugins/circuitbreaker/sres => ../circuitbreaker/sres
 	github.com/tx7do/go-wind-plugins/config => ../config
 	github.com/tx7do/go-wind-plugins/config/file => ../config/file
 	github.com/tx7do/go-wind-plugins/encoding => ../encoding
 	github.com/tx7do/go-wind-plugins/encoding/json => ../encoding/json
 	github.com/tx7do/go-wind-plugins/encoding/xml => ../encoding/xml
+	github.com/tx7do/go-wind-plugins/health => ../health
+	github.com/tx7do/go-wind-plugins/metrics => ../metrics
+	github.com/tx7do/go-wind-plugins/metrics/prometheus => ../metrics/prometheus
+	github.com/tx7do/go-wind-plugins/ratelimit => ../ratelimit
+	github.com/tx7do/go-wind-plugins/ratelimit/tokenbucket => ../ratelimit/tokenbucket
 	github.com/tx7do/go-wind-plugins/registry => ../registry
 	github.com/tx7do/go-wind-plugins/registry/etcd => ../registry/etcd
+	github.com/tx7do/go-wind-plugins/retry => ../retry
 	github.com/tx7do/go-wind-plugins/security/crypto => ../security/crypto
 	github.com/tx7do/go-wind-plugins/testing => ../testing
 	github.com/tx7do/go-wind-plugins/tracer/otlp => ../tracer/otlp

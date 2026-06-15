@@ -2,6 +2,13 @@ package jwt
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"strings"
 	"testing"
 	"time"
@@ -222,6 +229,227 @@ func TestAuthenticateToken_MissingKeyFunc(t *testing.T) {
 	_, err = auth.AuthenticateToken("anything")
 	assert.NotNil(t, err)
 	assert.Equal(t, engine.ErrInvalidToken, err)
+}
+
+// ---------------------------------------------------------------------------
+// Asymmetric algorithms (RS256 / ES256 / PS256 / EdDSA)
+// ---------------------------------------------------------------------------
+
+func TestAuthenticator_RS256(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.Nil(t, err)
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("RS256"),
+		WithSigningKey(privateKey),
+		WithVerificationKey(&privateKey.PublicKey),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "rs256-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+	assert.NotEmpty(t, token)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "rs256-user", sub)
+}
+
+func TestAuthenticator_RS256_WithPEM(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.Nil(t, err)
+
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	})
+
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	require.Nil(t, err)
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubKeyBytes,
+	})
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("RS256"),
+		WithPrivateKeyFromPEM(privateKeyPEM),
+		WithPublicKeyFromPEM(publicKeyPEM),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "rs256-pem-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+	assert.NotEmpty(t, token)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "rs256-pem-user", sub)
+}
+
+func TestAuthenticator_ES256(t *testing.T) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.Nil(t, err)
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("ES256"),
+		WithSigningKey(privateKey),
+		WithVerificationKey(&privateKey.PublicKey),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "es256-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "es256-user", sub)
+}
+
+func TestAuthenticator_ES256_WithPEM(t *testing.T) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.Nil(t, err)
+
+	privKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+	require.Nil(t, err)
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: privKeyBytes,
+	})
+
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	require.Nil(t, err)
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubKeyBytes,
+	})
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("ES256"),
+		WithECPrivateKeyFromPEM(privateKeyPEM),
+		WithECPublicKeyFromPEM(publicKeyPEM),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "es256-pem-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "es256-pem-user", sub)
+}
+
+func TestAuthenticator_PS256(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.Nil(t, err)
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("PS256"),
+		WithSigningKey(privateKey),
+		WithVerificationKey(&privateKey.PublicKey),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "ps256-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "ps256-user", sub)
+}
+
+func TestAuthenticator_EdDSA(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	require.Nil(t, err)
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("EdDSA"),
+		WithSigningKey(privateKey),
+		WithVerificationKey(publicKey),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "eddsa-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "eddsa-user", sub)
+}
+
+func TestAuthenticator_EdDSA_WithPEM(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	require.Nil(t, err)
+
+	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	require.Nil(t, err)
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: privKeyBytes,
+	})
+
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	require.Nil(t, err)
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubKeyBytes,
+	})
+
+	auth, err := NewAuthenticator(
+		WithSigningMethod("EdDSA"),
+		WithEd25519PrivateKeyFromPEM(privateKeyPEM),
+		WithEd25519PublicKeyFromPEM(publicKeyPEM),
+	)
+	require.Nil(t, err)
+
+	principal := engine.AuthClaims{
+		engine.ClaimFieldSubject: "eddsa-pem-user",
+	}
+
+	token, err := auth.CreateIdentity(principal)
+	require.Nil(t, err)
+
+	decoded, err := auth.AuthenticateToken(token)
+	require.Nil(t, err)
+
+	sub, _ := decoded.GetSubject()
+	assert.Equal(t, "eddsa-pem-user", sub)
 }
 
 // ---------------------------------------------------------------------------

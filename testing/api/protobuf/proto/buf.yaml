@@ -1,0 +1,30 @@
+# buf.yaml — 模块配置
+# 定义 protobuf 模块、外部依赖、lint 和 breaking change 规则。
+# 文档: https://buf.build/docs/configuration/v2/buf-yaml
+
+version: v2
+
+modules:
+  # path 指向当前目录（proto/），buf 会扫描其下所有 .proto 文件。
+  - path: .
+    name: hygrothermograph
+
+# 外部依赖：通过 Buf Schema Registry (BSR) 引入。
+# googleapis 提供 google/api/annotations.proto（i_hygrothermograph.proto 依赖）。
+deps:
+  - buf.build/googleapis/googleapis
+
+# Lint 规则：运行 `buf lint` 时生效。
+lint:
+  use:
+    - STANDARD
+  # 以下规则豁免说明：
+  # - PACKAGE_DIRECTORY_MATCH: 现有 proto 文件放在 proto/ 子目录下，
+  #   与 package 名不完全匹配，此处豁免。
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+
+# Breaking change 检测：运行 `buf breaking` 时生效，用于 CI 中防止不兼容变更。
+breaking:
+  use:
+    - FILE

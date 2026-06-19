@@ -1,0 +1,32 @@
+# buf.gen.yaml — 代码生成配置
+# 定义使用哪些插件生成代码、输出路径及插件选项。
+# 文档: https://buf.build/docs/configuration/v2/buf-gen-yaml
+#
+# 使用方式:
+#   buf generate
+#
+# 使用 remote 插件（buf.build/protocolbuffers/go 等）无需本地安装 protoc-gen-go，
+# buf 会自动从 BSR 下载并运行。
+
+version: v2
+
+# Managed Mode: 启用后 buf 可自动管理 go_package 等选项。
+# 此处仅启用但不覆盖，尊重 proto 文件中已有的 go_package 声明。
+managed:
+  enabled: true
+
+plugins:
+  # 1. 生成 Go 消息类型 (protoc-gen-go)
+  #    输出到上一级目录 (../)，与现有 hygrothermograph.pb.go 位置一致。
+  #    paths=source_relative: 按 proto 文件名输出，不按 go_package 路径嵌套。
+  - remote: buf.build/protocolbuffers/go
+    out: ../
+    opt:
+      - paths=source_relative
+
+  # 2. 生成 gRPC 服务端/客户端代码 (protoc-gen-go-grpc)
+  #    输出位置同上。
+  - remote: buf.build/grpc/go
+    out: ../
+    opt:
+      - paths=source_relative

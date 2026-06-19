@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package protobuf.api;
+
+option go_package = "go-wind-plugins/api/protobuf;api";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+import "hygrothermograph.proto";
+
+service HygrothermographHTTPService {
+  rpc GetHygrothermograph (google.protobuf.Empty) returns (Hygrothermograph) {
+    option (google.api.http) = {
+      get: "/hygrothermograph"
+    };
+  }
+}
